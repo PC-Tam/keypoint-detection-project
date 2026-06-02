@@ -2,211 +2,261 @@
 
 # Keypoint Detection Project
 
-**Nghiên cứu, triển khai và so sánh các phương pháp phát hiện điểm đặc trưng ảnh**  
-**theo 4 luồng tiếp cận: Hand-crafted → Real-time → ML Clustering → Deep Learning**
+**Ứng dụng Keypoint Detection trong nhận diện nhãn sản phẩm/logo**  
+**với 3 phương pháp chính: Harris Corner Detection · FAST · ORB**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![OpenCV](https://img.shields.io/badge/OpenCV-4.9%2B-green.svg)](https://opencv.org/)
-[![scikit-image](https://img.shields.io/badge/scikit--image-Latest-yellow.svg)](https://scikit-image.org/)
-[![scikit-learn](https://img.shields.io/badge/scikit--learn-Latest-F7931E.svg)](https://scikit-learn.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.2%2B-EE4C2C.svg)](https://pytorch.org/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.x-green.svg)](https://opencv.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-App-red.svg)](https://streamlit.io/)
 [![Matplotlib](https://img.shields.io/badge/Matplotlib-Plotting-blueviolet.svg)](https://matplotlib.org/)
 [![Pandas](https://img.shields.io/badge/Pandas-Data--Analysis-lightgrey.svg)](https://pandas.pydata.org/)
 [![NumPy](https://img.shields.io/badge/NumPy-Scientific--Computing-ff69b4.svg)](https://numpy.org/)
 [![Pillow](https://img.shields.io/badge/Pillow-Image--Processing-informational.svg)](https://python-pillow.org/)
 
-
 </div>
 
 ---
 
-## Giới thiệu | Introduction
+## 1. Giới thiệu | Introduction
 
-**[VI]** Dự án nghiên cứu, triển khai và so sánh các phương pháp phát hiện điểm đặc trưng ảnh (Keypoint Detection) theo **4 luồng tiếp cận có hệ thống**: Hand-crafted Features (Harris, SIFT, LoG/DoH) → Real-time Features (FAST, ORB) → ML Clustering (Bag of Visual Words) → Deep Learning (CNN/MobileNetV2 + Grad-CAM). Kèm theo là ứng dụng web demo 3 tab cho phép so sánh trực tiếp kết quả của các phương pháp.
+Dự án tập trung nghiên cứu, triển khai và so sánh các phương pháp phát hiện điểm đặc trưng ảnh (*Keypoint Detection*) trong xử lý ảnh truyền thống.
 
-**[EN]** This project systematically studies, implements, and compares keypoint detection methods across **4 algorithmic streams**: Hand-crafted Features (Harris, SIFT, LoG/DoH) → Real-time Features (FAST, ORB) → ML Clustering (Bag of Visual Words) → Deep Learning (CNN/MobileNetV2 + Grad-CAM), with an interactive 3-tab Streamlit web application for live comparison.
+Dự án sử dụng **3 phương pháp chính**:
+
+1. **Harris Corner Detection**
+2. **FAST — Features from Accelerated Segment Test**
+3. **ORB — Oriented FAST and Rotated BRIEF**
+
+Trong đó, Harris và FAST được dùng để phát hiện và so sánh các điểm đặc trưng trên ảnh. ORB được dùng cho cả phát hiện keypoints, trích xuất descriptors và xây dựng demo nhận diện nhãn sản phẩm/logo thông qua feature matching.
 
 ---
 
-##  Tính năng | Features
+## 2. Bài toán ứng dụng | Application Problem
+
+Bài toán cụ thể của dự án:
+
+> **Nhận diện sự xuất hiện của một nhãn sản phẩm hoặc logo đã biết trong ảnh đầu vào bằng Keypoint Detection và Feature Matching.**
+
+Cách hoạt động tổng quát:
+
+1. Người dùng upload một ảnh mẫu chứa nhãn sản phẩm/logo cần nhận diện.
+2. Người dùng upload một ảnh kiểm thử có thể chứa hoặc không chứa nhãn/logo đó.
+3. Hệ thống dùng ORB để phát hiện keypoints và trích xuất descriptors trên cả hai ảnh.
+4. Hệ thống so khớp descriptors bằng Brute-Force Matcher với Hamming Distance.
+5. Nếu số lượng good matches vượt ngưỡng, hệ thống kết luận nhãn/logo có khả năng xuất hiện trong ảnh kiểm thử.
+6. Nếu đủ điều kiện, hệ thống sử dụng Homography + RANSAC để vẽ vùng phát hiện trên ảnh kiểm thử.
+
+---
+
+## 3. Phạm vi dự án | Scope
+
+| Nội dung | Vai trò |
+|:---|:---|
+| Harris Corner Detection | Phương pháp chính thứ nhất, baseline cổ điển |
+| FAST | Phương pháp chính thứ hai, nhấn mạnh tốc độ |
+| ORB | Phương pháp chính thứ ba, dùng cho nhận diện bằng matching |
+| OpenCV | Xử lý ảnh, keypoint detection, feature matching |
+| Streamlit | Web app demo chạy local |
+| Matplotlib / Pandas / NumPy | Đánh giá, bảng kết quả, biểu đồ |
+| GitHub | Quản lý mã nguồn, phân công, release |
+
+
+---
+
+## 4. Kiến trúc phương pháp | Method Architecture
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                KEYPOINT DETECTION PROJECT                    │
+├────────────────────┬────────────────────┬────────────────────┤
+│ Method 1           │ Method 2           │ Method 3           │
+│ Harris Corner      │ FAST               │ ORB                │
+├────────────────────┼────────────────────┼────────────────────┤
+│ Classical corner   │ Real-time keypoint │ Keypoint +         │
+│ detection          │ detection          │ descriptor         │
+├────────────────────┼────────────────────┼────────────────────┤
+│ Output:            │ Output:            │ Output:            │
+│ keypoints + time   │ keypoints + time   │ keypoints,         │
+│                    │                    │ descriptors,       │
+│                    │                    │ matching result    │
+└────────────────────┴────────────────────┴────────────────────┘
+                              │
+                              ▼
+                ┌────────────────────────────┐
+                │ Streamlit Web App           │
+                │ Tab 1: Detection            │
+                │ Tab 2: ORB Matching         │
+                │ Tab 3: Evaluation           │
+                └────────────────────────────┘
+```
+
+---
+
+## 5. Các phương pháp chính | Main Methods
+
+### 5.1. Harris Corner Detection
+
+Harris Corner Detection là phương pháp phát hiện góc cổ điển. Phương pháp này dựa trên sự thay đổi cường độ sáng của vùng ảnh khi dịch chuyển theo nhiều hướng khác nhau. Những vị trí có sự thay đổi mạnh theo cả hai hướng thường được xem là điểm góc hoặc điểm đặc trưng.
+
+**Vai trò trong dự án:**
+
+- Là phương pháp baseline truyền thống.
+- Dùng để minh họa nguyên lý phát hiện điểm đặc trưng cổ điển.
+- Dùng để so sánh với FAST và ORB về số lượng keypoints, thời gian xử lý và chất lượng trực quan.
+
+**Kết quả đầu ra:**
+
+- Ảnh có đánh dấu các điểm Harris.
+- Số lượng điểm phát hiện được.
+- Thời gian xử lý.
+
+---
+
+### 5.2. FAST — Features from Accelerated Segment Test
+
+FAST là phương pháp phát hiện keypoints tốc độ cao. Phương pháp này kiểm tra một vòng tròn các pixel xung quanh điểm trung tâm để xác định xem điểm đó có phải là điểm đặc trưng hay không.
+
+**Vai trò trong dự án:**
+
+- Là phương pháp chính thứ hai.
+- Đại diện cho nhóm real-time keypoint detection.
+- Dùng để so sánh tốc độ với Harris và ORB.
+
+**Kết quả đầu ra:**
+
+- Ảnh có đánh dấu keypoints FAST.
+- Số lượng keypoints.
+- Thời gian xử lý.
+
+---
+
+### 5.3. ORB — Oriented FAST and Rotated BRIEF
+
+ORB là phương pháp kết hợp FAST detector và BRIEF descriptor đã cải tiến. ORB vừa có thể phát hiện keypoints, vừa có thể tạo descriptors dạng nhị phân để phục vụ so khớp đặc trưng.
+
+**Vai trò trong dự án:**
+
+- Là phương pháp chính thứ ba.
+- Là phương pháp quan trọng nhất trong phần demo nhận diện nhãn sản phẩm/logo.
+- Dùng để phát hiện keypoints, trích xuất descriptors và so khớp đặc trưng giữa ảnh mẫu và ảnh kiểm thử.
+
+**Kết quả đầu ra:**
+
+- Ảnh có keypoints ORB.
+- Số lượng keypoints.
+- Thời gian xử lý.
+- Ảnh matching giữa ảnh mẫu và ảnh kiểm thử.
+- Số lượng good matches.
+- Kết luận `Detected` hoặc `Not detected`.
+
+---
+
+## 6. Phương pháp phụ trợ | Supporting Techniques
+
+Các kỹ thuật sau chỉ đóng vai trò hỗ trợ trong pipeline nhận diện, **không được tính là phương pháp chính**:
+
+| Kỹ thuật | Vai trò |
+|:---|:---|
+| Brute-Force Matcher | So khớp ORB descriptors giữa hai ảnh |
+| Hamming Distance | Đo khoảng cách giữa các binary descriptors |
+| Ratio Test hoặc Distance Threshold | Lọc các matches kém |
+| RANSAC | Loại bỏ matches sai khi tính Homography |
+| Homography | Ước lượng vùng chứa logo/nhãn trong ảnh kiểm thử |
+| Visualization | Vẽ keypoints, matches, bounding box, bảng và biểu đồ |
+
+---
+
+## 7. Tính năng | Features
 
 | Tính năng | Mô tả |
 |:---|:---|
-|  **4 luồng tiếp cận** | Từ Hand-crafted → Real-time → ML Clustering → Deep Learning — bám sát nội dung bài giảng |
-|  **8 phương pháp** | Harris · SIFT · LoG/DoH · FAST · ORB · K-Means · BoVW · CNN/MobileNetV2 |
-|  **So sánh định lượng** | Đo lường số keypoint, thời gian xử lý, phân bố không gian trên cùng bộ ảnh test |
-|  **Web app 3 tab** | Detection · BoVW Image Matching · CNN Grad-CAM Visualization |
-|  **Workflow chuẩn** | Toàn bộ sprint, issue, phân công quản lý trên GitHub Project Board |
+| 3 phương pháp chính | Harris · FAST · ORB |
+| Web app chạy local | Giao diện Streamlit đơn giản, không cần GPU |
+| Keypoint visualization | Vẽ trực tiếp keypoints lên ảnh đầu vào |
+| ORB feature matching | So khớp ảnh mẫu và ảnh kiểm thử |
+| Product/logo detection demo | Nhận diện nhãn sản phẩm/logo đã biết |
+| Evaluation table | Lưu kết quả thực nghiệm vào `results.csv` |
+| Charts | So sánh số keypoints, runtime và kết quả matching |
+| No Deep Learning | Không dùng CNN, MobileNetV2, Grad-CAM, PyTorch |
 
 ---
 
-##  Kiến trúc 4 luồng | 4-Stream Architecture
+## 8. Ứng dụng Web | Web Application
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    KEYPOINT DETECTION PROJECT                   │
-├──────────────────┬──────────────────┬──────────────┬───────────┤
-│  LUỒNG 1         │  LUỒNG 2         │  LUỒNG 3     │  LUỒNG 4  │
-│  Hand-crafted    │  Real-time       │  ML Cluster  │  Deep     │
-│  Features        │  Features        │  (BoVW)      │  Learning │
-├──────────────────┼──────────────────┼──────────────┼───────────┤
-│  • Harris Corner │  • FAST          │  • K-Means   │  • CNN    │
-│  • SIFT          │  • ORB           │  • BoVW      │  MobileV2 │
-│  • LoG / DoH     │                  │  • K-NN      │  • Grad-  │
-│                  │                  │              │    CAM    │
-├──────────────────┼──────────────────┼──────────────┼───────────┤
-│  Duy Quang       │  Chí Tâm         │  Trọng Nguyên│  Lan Thanh│
-└──────────────────┴──────────────────┴──────────────┴───────────┘
-         │                  │                │              │
-         └──────────────────┴────────────────┴──────────────┘
-                                   │
-                    ┌──────────────▼──────────────┐
-                    │   Streamlit Web App (3 tab)  │
-                    └─────────────────────────────┘
-```
-
----
-
-##  Các phương pháp | Methods
-
-### Luồng 1 — Hand-crafted Features *(Duy Quang)*
-
-| # | Phương pháp | Vai trò | Thư viện | Tham số chính | Đặc điểm |
-|:---:|:---|:---:|:---:|:---:|:---|
-| 1 | **Harris Corner** | Phương pháp phụ / Nền tảng | `OpenCV` | `k=0.04` · `threshold=0.01` | Phát hiện góc — nền tảng lý thuyết cổ điển |
-| 2 | **LoG / DoH** | Phương pháp phụ / Nền tảng | `scikit-image` | `max_sigma=30` | Blob detection — đạo hàm bậc 2, nền tảng cho DoG trong SIFT |
-| 3 | **SIFT** |  Phương pháp chính | `OpenCV` | `nfeatures=500` | Bất biến tỉ lệ/góc xoay · Descriptor 128 chiều · Dùng DoG ≈ LoG |
-
-> **Lưu ý:** Bằng sáng chế SIFT hết hạn tháng 3/2020 — dùng `opencv-python` bình thường, không cần `opencv-contrib`.
-
-### Luồng 2 — Real-time Features *(Chí Tâm)*
-
-| # | Phương pháp | Vai trò | Thư viện | Tham số chính | Đặc điểm |
-|:---:|:---|:---:|:---:|:---:|:---|
-| 4 | **FAST** | Phương pháp phụ | `OpenCV` | `threshold=10` · `nms=True` | Segment test 16 pixel · Tốc độ cao · Không có descriptor |
-| 5 | **ORB** |  Phương pháp chính | `OpenCV` | `nfeatures=500` | FAST (detect) + BRIEF (describe) · Binary descriptor · Royalty-free |
-
-### Luồng 3 — ML Clustering / BoVW *(Trọng Nguyên)*
-
-| # | Phương pháp | Vai trò | Thư viện | Tham số chính | Đặc điểm |
-|:---:|:---|:---:|:---:|:---:|:---|
-| 6 | **K-Means** | Phương pháp phụ / Bổ trợ | `scikit-learn` | `n_clusters=50` | Unsupervised clustering · Tạo visual vocabulary |
-| 7 | **K-NN** | Phương pháp phụ / Bổ trợ | `scikit-learn` | `n_neighbors=3` | Supervised · Image retrieval theo histogram similarity |
-| 8 | **BoVW** |  Phương pháp chính | `scikit-learn` | `vocab_size=50` | SIFT descriptors → K-Means codebook → Histogram → K-NN matching |
-
-### Luồng 4 — Deep Learning *(Lan Thanh)*
-
-| # | Phương pháp | Vai trò | Thư viện | Tham số chính | Đặc điểm |
-|:---:|:---|:---:|:---:|:---:|:---|
-| 9 | **CNN / MobileNetV2** |  Phương pháp chính | `torchvision` | `pretrained=True` | Depthwise separable conv · Feature extractor 1280 chiều · Data-driven |
-| 10 | **Grad-CAM** | Bổ trợ visualization | `torch` | — | Visualize vùng CNN tập trung ≈ "keypoint vùng" theo deep learning |
-
----
-
-##  Ứng dụng Web | Web Application
+Web app gồm 3 tab chính.
 
 ### Tab 1 — Keypoint Detection
 
 | Bước | Thao tác |
 |:---:|:---|
-| 1 | Upload ảnh bất kỳ (JPG, PNG — kể cả PNG có alpha channel) |
-| 2 | Chọn một hoặc nhiều method: Harris · SIFT · ORB · FAST · LoG · DoH |
-| 3 | Nhấn **"Phân tích ảnh"** — kết quả hiển thị song song theo grid |
-| 4 | Xem bảng tổng hợp: method · số keypoint · thời gian xử lý (ms) |
+| 1 | Upload một ảnh đầu vào |
+| 2 | Chọn phương pháp: Harris, FAST hoặc ORB |
+| 3 | Nhấn nút phân tích |
+| 4 | Xem ảnh có keypoints, số lượng keypoints và thời gian xử lý |
 
-### Tab 2 — BoVW Image Matching
-
-| Bước | Thao tác |
-|:---:|:---|
-| 1 | Upload ảnh query |
-| 2 | Nhấn **"Tìm ảnh tương tự"** |
-| 3 | Xem top-3 ảnh tương tự nhất từ database kèm similarity score |
-| 4 | Hiểu nguyên lý: SIFT descriptors → K-Means → Histogram → Cosine similarity |
-
-### Tab 3 — CNN Feature Visualization
+### Tab 2 — Logo/Product Matching
 
 | Bước | Thao tác |
 |:---:|:---|
-| 1 | Upload ảnh bất kỳ |
-| 2 | Nhấn **"Phân tích CNN"** |
-| 3 | Xem song song: ảnh gốc \| Grad-CAM heatmap |
-| 4 | Đọc thống kê: CNN feature dimension · thời gian xử lý · so sánh với SIFT |
+| 1 | Upload ảnh mẫu chứa logo/nhãn sản phẩm |
+| 2 | Upload ảnh kiểm thử |
+| 3 | Chạy ORB Matching |
+| 4 | Xem ảnh matches, số good matches và kết luận detected/not detected |
+| 5 | Nếu đủ matches, xem vùng phát hiện được vẽ trên ảnh kiểm thử |
+
+### Tab 3 — Evaluation
+
+| Bước | Thao tác |
+|:---:|:---|
+| 1 | Đọc dữ liệu từ `results/results.csv` |
+| 2 | Hiển thị bảng kết quả thực nghiệm |
+| 3 | Vẽ biểu đồ so sánh số keypoints |
+| 4 | Vẽ biểu đồ so sánh thời gian xử lý |
+| 5 | Hiển thị nhận xét ngắn về ưu/nhược điểm của từng phương pháp |
 
 ---
 
-##  Cấu trúc thư mục | Project Structure
+## 9. Cấu trúc thư mục | Project Structure
 
-```
+```text
 keypoint-detection-project/
 │
-├── .github/
-│   └── ISSUE_TEMPLATE/
-│       ├── bug_report.md
-│       └── feature_request.md
+├── app.py
+├── requirements.txt
+├── README.md
 │
-├── app/
-│   ├── streamlit_app.py          # Web app chính (3 tab)
-│   └── image_utils.py            # Tiền xử lý ảnh, xử lý edge cases
-│
-├── methods/
-│   ├── base_detector.py          # Interface chuẩn cho toàn bộ methods
-│   ├── harris.py                 # Harris Corner Detector          [Luồng 1]
-│   ├── sift.py                   # SIFT Detector + match_sift()    [Luồng 1]
-│   ├── blob_detector.py          # LoG + DoH Blob Detection        [Luồng 1]
-│   ├── orb.py                    # ORB Detector                    [Luồng 2]
-│   ├── fast.py                   # FAST Detector                   [Luồng 2]
-│   ├── bovw.py                   # BoVW Pipeline (K-Means + K-NN)  [Luồng 3]
-│   └── cnn_extractor.py          # MobileNetV2 + Grad-CAM          [Luồng 4]
-│
-├── models/
-│   └── bovw_codebook.pkl         # K-Means codebook (tạo bằng bovw.py)
-│
-├── evaluation/
-│   ├── compare.py                # Script đo lường 6 methods × 4 metrics
-│   ├── visualize.py              # Figures so sánh side-by-side
-│   ├── results.csv               # Kết quả đo lường thực tế
-│   ├── charts/                   # Biểu đồ so sánh (PNG)
-│   │   ├── keypoint_count.png
-│   │   ├── processing_time.png
-│   │   └── distribution.png
-│   └── figures/                  # Figures visualize từng ảnh test
-│       ├── compare_<image>.png   # 6 cột: ảnh gốc + 5 classical methods
-│       ├── blob_vs_corner.png    # So sánh Harris vs LoG vs DoH
-│       └── speed_ranking.png     # Xếp hạng tốc độ
-│
-├── notebooks/
-│   ├── harris_demo.ipynb         # Demo Harris Corner
-│   ├── sift_demo.ipynb           # Demo SIFT + Feature Matching
-│   ├── blob_demo.ipynb           # Demo LoG / DoH
-│   ├── orb_demo.ipynb            # Demo ORB
-│   ├── fast_demo.ipynb           # Demo FAST (NMS on/off comparison)
-│   ├── bovw_demo.ipynb           # Demo BoVW pipeline end-to-end
-│   └── cnn_demo.ipynb            # Demo MobileNetV2 + Grad-CAM
+├── src/
+│   ├── harris_detector.py        # Harris Corner Detection
+│   ├── fast_detector.py          # FAST Detection
+│   ├── orb_detector.py           # ORB Detection + Descriptor
+│   ├── matcher.py                # ORB Matching + Homography
+│   ├── evaluation.py             # Run evaluation and export CSV
+│   └── utils.py                  # Image loading, conversion, visualization
 │
 ├── data/
-│   ├── general/                  # Ảnh chung — test Harris/SIFT/ORB/FAST/LoG/DoH
-│   ├── blob/                     # Ảnh blob — test LoG/DoH (tế bào, bong bóng...)
-│   ├── matching_pairs/           # Cặp ảnh — test BoVW matching
-│   └── README.md                 # Nguồn gốc ảnh test
+│   ├── templates/                # Ảnh mẫu logo/nhãn sản phẩm
+│   └── test_images/              # Ảnh kiểm thử positive/negative
 │
-├── report/
-│   ├── theory_draft.md           # Tóm tắt lý thuyết 4 luồng (Sprint 1)
-│   ├── T13a_classical.md         # Lý thuyết Hand-crafted: Harris/SIFT/LoG/DoH
-│   ├── T13b_cnn_evaluation.md    # Lý thuyết ORB/FAST/CNN + kết quả thực nghiệm
-│   ├── T13c_bovw_webapp.md       # BoVW + mô tả web app 3 tab + kết luận
-│   └── final_report.pdf          # Báo cáo hoàn chỉnh
+├── results/
+│   ├── results.csv               # Bảng kết quả thực nghiệm
+│   ├── charts/                   # Biểu đồ đánh giá
+│   └── figures/                  # Ảnh output minh họa
 │
-├── .gitignore
-├── requirements.txt
-└── README.md
+├── notebooks/
+│   ├── 01_harris_demo.ipynb
+│   ├── 02_fast_demo.ipynb
+│   └── 03_orb_matching_demo.ipynb
+│
+└── report/
+    ├── report_draft.md
+    └── final_report.pdf
 ```
 
 ---
 
-##  Cài đặt | Installation
+## 10. Cài đặt | Installation
 
-> **Yêu cầu hệ thống:** Python 3.10+ · pip · Git
+> Yêu cầu hệ thống: Python 3.10+, pip, Git.
 
 ### Bước 1 — Clone repository
 
@@ -215,11 +265,13 @@ git clone https://github.com/Sunphuynx/keypoint-detection-project.git
 cd keypoint-detection-project
 ```
 
-### Bước 2 — Tạo môi trường ảo *(khuyến nghị)*
+### Bước 2 — Tạo môi trường ảo
 
 ```bash
 python -m venv venv
 ```
+
+Kích hoạt môi trường ảo:
 
 ```bash
 # Windows
@@ -235,226 +287,73 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Bước 4 — Build BoVW Codebook *(chỉ cần làm 1 lần)*
+### Bước 4 — Chạy web app
 
 ```bash
-python -c "from methods.bovw import build_vocabulary; build_vocabulary('data/general/')"
+streamlit run app.py
 ```
 
-> File `models/bovw_codebook.pkl` sẽ được tạo tự động.  
-> Cần có ảnh trong `data/general/` trước khi chạy bước này.
+Sau đó mở trình duyệt tại:
 
-### Bước 5 — Chạy web app
-
-```bash
-streamlit run app/streamlit_app.py
+```text
+http://localhost:8501
 ```
-
-Mở trình duyệt và truy cập: `http://localhost:8501`
 
 ---
 
-##  Dependencies
+## 11. Kết quả kỳ vọng | Expected Results
 
-| Package | Phiên bản | Mục đích |
-|:---|:---:|:---|
-| `opencv-python` | 4.9.0.80 | Xử lý ảnh · Harris · SIFT · ORB · FAST |
-| `scikit-image` | 0.22.0 | Blob detection — LoG và DoH |
-| `scikit-learn` | 1.4.0 | K-Means clustering · K-NN · BoVW pipeline |
-| `torch` | 2.2.0 | PyTorch deep learning framework |
-| `torchvision` | 0.17.0 | MobileNetV2 pretrained · Image transforms |
-| `streamlit` | 1.33.0 | Web application framework |
-| `numpy` | 1.26.4 | Tính toán ma trận và xử lý dữ liệu |
-| `matplotlib` | 3.8.0 | Vẽ biểu đồ và visualization |
-| `Pillow` | 10.2.0 | Đọc/ghi và convert định dạng ảnh |
-| `pandas` | 2.2.0 | Lưu và phân tích kết quả đo lường |
-
----
-
-##  Hướng dẫn sử dụng | Usage
-
-### Luồng 1 & 2 — Classical + Real-time Methods
-
-Tất cả các method tuân theo interface chuẩn từ `methods/base_detector.py`:
-
-```python
-from methods.harris import detect_harris
-from methods.sift import detect_sift
-from methods.blob_detector import detect_blobs
-from methods.orb import detect_orb
-from methods.fast import detect_fast
-
-# Tất cả trả về cùng format:
-# (keypoints_list, annotated_image_numpy, processing_time_ms)
-
-keypoints, image, time_ms = detect_harris("data/general/general_01.jpg")
-keypoints, image, time_ms = detect_sift("data/general/general_01.jpg")
-keypoints, image, time_ms = detect_blobs("data/blob/blob_01.jpg", method="log")
-keypoints, image, time_ms = detect_orb("data/general/general_01.jpg")
-keypoints, image, time_ms = detect_fast("data/general/general_01.jpg", nms=True)
-```
-
-### Luồng 3 — BoVW Pipeline
-
-```python
-from methods.bovw import build_vocabulary, encode_image, find_similar_images
-import pickle
-
-# 1. Build vocabulary (chỉ làm 1 lần)
-kmeans = build_vocabulary("data/general/", n_clusters=50)
-
-# 2. Encode một ảnh thành histogram vector
-histogram = encode_image("data/general/general_01.jpg", kmeans)
-print(f"Histogram shape: {histogram.shape}")  # (50,)
-
-# 3. Tìm ảnh tương tự
-kmeans = pickle.load(open("models/bovw_codebook.pkl", "rb"))
-results = find_similar_images(
-    query_path="data/general/general_01.jpg",
-    kmeans=kmeans,
-    database_matrix=db_matrix,
-    image_paths=image_paths,
-    top_k=3
-)
-# results = [(similarity_score, image_path), ...]
-```
-
-### Luồng 4 — CNN + Grad-CAM
-
-```python
-from methods.cnn_extractor import extract_cnn_features, visualize_gradcam
-
-# Trích xuất feature vector
-feature_vector, time_ms = extract_cnn_features("data/general/general_01.jpg")
-print(f"CNN feature dim: {feature_vector.shape}")  # (1280,)
-
-# Visualize Grad-CAM
-heatmap_image = visualize_gradcam("data/general/general_01.jpg")
-# heatmap_image: BGR numpy array với heatmap overlay
-```
-
-### Chạy toàn bộ Evaluation
-
-```bash
-# Đo lường 6 methods → lưu results.csv
-python evaluation/compare.py
-
-# Tạo figures và biểu đồ → lưu charts/ và figures/
-python evaluation/visualize.py
-```
-
-### Chạy Notebook Demo
-
-```bash
-jupyter notebook notebooks/
-```
-
-| Notebook | Nội dung |
+| Phương pháp | Kết quả kỳ vọng |
 |:---|:---|
-| `harris_demo.ipynb` | Harris Corner trên ảnh đa dạng |
-| `sift_demo.ipynb` | SIFT detect + Feature matching giữa 2 ảnh |
-| `blob_demo.ipynb` | LoG vs DoH · So sánh Corner vs Blob |
-| `orb_demo.ipynb` | ORB · So sánh binary vs float descriptor |
-| `fast_demo.ipynb` | FAST · NMS=True vs NMS=False |
-| `bovw_demo.ipynb` | BoVW pipeline end-to-end · K-Means · K-NN |
-| `cnn_demo.ipynb` | MobileNetV2 features · Grad-CAM · So sánh CNN vs SIFT |
+| Harris | Phát hiện tốt các điểm góc rõ ràng, dễ giải thích về mặt lý thuyết |
+| FAST | Chạy nhanh, phát hiện nhiều keypoints, phù hợp so sánh thời gian xử lý |
+| ORB | Có thể phát hiện keypoints, tạo descriptors và matching giữa ảnh mẫu với ảnh kiểm thử |
+| ORB Matching | Có thể nhận diện nhãn/logo trong điều kiện ảnh đủ rõ, có nhiều chi tiết và ít bị che khuất |
 
 ---
 
-##  Kết quả | Results
+## 12. Hạn chế | Limitations
 
-> Xem báo cáo đầy đủ với số liệu thực nghiệm tại `report/final_report.pdf`
+Hệ thống chỉ nhận diện một đối tượng đã biết bằng cách so khớp điểm đặc trưng giữa ảnh mẫu và ảnh kiểm thử.
 
-### Hướng dẫn chọn phương pháp theo usecase
+Các trường hợp có thể làm kết quả kém:
 
-| Usecase | Phương pháp đề xuất | Luồng | Lý do |
-|:---|:---:|:---:|:---|
-| Cần tốc độ tối đa, real-time | **FAST** | Real-time | Nhanh nhất — chỉ so sánh pixel trên vòng tròn |
-| Feature matching, object retrieval (classical) | **SIFT** | Hand-crafted | Descriptor 128D mạnh, bất biến tỉ lệ/góc xoay |
-| Nhẹ, không GPU, royalty-free | **ORB** | Real-time | FAST + BRIEF, binary descriptor, matching bằng Hamming |
-| Phát hiện vùng đặc trưng (blob, tế bào) | **LoG / DoH** | Hand-crafted | Đạo hàm bậc 2 — phát hiện vùng, không phải góc |
-| Image retrieval từ database | **BoVW** | ML Clustering | Encode ảnh thành histogram, scalable, không cần GPU |
-| Hiểu ngữ nghĩa ảnh, data-driven | **CNN + Grad-CAM** | Deep Learning | Feature 1280D biểu diễn ngữ nghĩa cao, visualize được |
-| Nền tảng lý thuyết, giảng dạy | **Harris** | Hand-crafted | Công thức tường minh, dễ hiểu, dễ phân tích |
+- Logo/nhãn quá ít chi tiết hoặc quá trơn.
+- Ảnh bị mờ mạnh, thiếu sáng hoặc lóa sáng.
+- Góc chụp quá nghiêng.
+- Vật thể bị che khuất nhiều.
+- Ảnh mẫu và ảnh kiểm thử khác nhau quá lớn về tỉ lệ, ánh sáng hoặc chất lượng.
 
 ---
 
-##  Thành viên | Team
+## 13. Phân công thành viên | Team Assignment
 
-| Thành viên | Vai trò | Luồng phụ trách | Trách nhiệm chính |
-|:---|:---:|:---:|:---|
-| **Chí Tâm** | Tech Lead · Algorithm Engineer | Luồng 2 | Setup repo · `base_detector.py` · FAST · ORB · Tích hợp web app · Release |
-| **Duy Quang** | Hand-crafted Features Engineer | Luồng 1 | Harris · SIFT · LoG/DoH · Visualization · Báo cáo T13a |
-| **Lan Thanh** | Deep Learning Engineer · Evaluation Lead | Luồng 4 | CNN/MobileNetV2 · Grad-CAM · Evaluation metrics · Báo cáo T13b |
-| **Trọng Nguyên** | ML Clustering Engineer · Web App · Report Lead | Luồng 3 | BoVW pipeline · Streamlit app 3 tab · Tổng hợp báo cáo T13c+d |
-
----
-
-##  GitHub Project
-
-Toàn bộ tiến độ, phân công và sprint được quản lý tại GitHub Project Board:
-
- **[Xem Project Board](https://github.com/Sunphuynx/keypoint-detection-project/projects)**
-
-### Sprint Overview
-
-| Sprint | Thời gian | Mục tiêu |
-|:---:|:---|:---|
-| Sprint 1 | 29/04 – 05/05 | Setup + Harris + Dataset |
-| Sprint 2 | 06/05 – 12/05 | SIFT · LoG/DoH · ORB · FAST · CNN · BoVW |
-| Sprint 3 | 13/05 – 19/05 | Evaluation + Web App 3 tab |
-| Sprint 4 | 20/05 – 26/05 | Báo cáo + Cleanup + Release v1.0.0 |
-
-### Quy ước đặt tên branch
-
-```
-feature/harris-implementation      ← tính năng mới
-feature/bovw-pipeline              ← tính năng mới
-fix/sift-scale-space-error         ← bug fix
-docs/update-readme                 ← tài liệu
-eval/comparison-metrics            ← evaluation
-app/streamlit-3-tabs               ← web app
-```
-
-### Quy ước commit message
-
-```
-feat: add harris corner detector module
-feat: implement bovw pipeline with kmeans clustering
-feat: add mobilenetv2 gradcam visualization
-fix: resolve orb binary descriptor matching issue
-docs: update README with 4-stream architecture
-eval: add processing time comparison chart
-app: integrate bovw matching into tab 2
-```
+| Thành viên | Vai trò mới | Trách nhiệm chính |
+|:---|:---|:---|
+| Chí Tâm | ORB Matching · Integration | Thiết kế cấu trúc repo, thống nhất output format, implement ORB, implement feature matching, tích hợp Streamlit, cleanup code, README |
+| Duy Quang | Harris + FAST Engineer | Implement Harris, implement FAST, tạo notebook demo, xuất hình minh họa keypoints, viết phần lý thuyết Harris và FAST |
+| Trọng Nguyên | Dataset · Streamlit · Visualization | Chuẩn bị ảnh template/test, xây dựng web app, tạo tab Evaluation, vẽ biểu đồ, hỗ trợ tổng hợp kết quả |
+| Lan Thanh | Evaluation · Report Lead | Thiết kế tiêu chí đánh giá, chạy test, tạo `results.csv`, viết phần evaluation, hạn chế, kết luận và tổng hợp báo cáo |
 
 ---
 
-##  Tài liệu tham khảo chính | Key References
+## 14. Tài liệu tham khảo chính | Key References
 
 | Tác giả | Tên công trình | Năm | Liên quan |
 |:---|:---|:---:|:---|
-| Lowe, D.G. | "Object recognition from local scale-invariant features" | 1999 | SIFT |
-| Lowe, D.G. | "Distinctive image features from scale-invariant keypoints" | 2004 | SIFT |
-| Rublee et al. | "ORB: An efficient alternative to SIFT or SURF" | 2011 | ORB |
-| Rosten & Drummond | "Machine learning for high-speed corner detection" | 2006 | FAST |
-| Sivic & Zisserman | "Video Google: A text retrieval approach to object matching" | 2003 | BoVW |
-| Sandler et al. | "MobileNetV2: Inverted Residuals and Linear Bottlenecks" | 2018 | CNN |
-| Selvaraju et al. | "Grad-CAM: Visual explanations from deep networks" | 2017 | Grad-CAM |
-
----
-
-##  License
-
-Dự án được phân phối theo giấy phép **MIT License** — xem file [LICENSE](LICENSE) để biết thêm chi tiết.
+| Harris, C. & Stephens, M. | A Combined Corner and Edge Detector | 1988 | Harris Corner Detection |
+| Rosten, E. & Drummond, T. | Machine Learning for High-Speed Corner Detection | 2006 | FAST |
+| Rublee, E., Rabaud, V., Konolige, K. & Bradski, G. | ORB: An efficient alternative to SIFT or SURF | 2011 | ORB |
+| Bradski, G. & Kaehler, A. | Learning OpenCV 3 | 2016 | OpenCV, feature detection |
+| Gonzalez, R. C. & Woods, R. E. | Digital Image Processing | 2018 | Xử lý ảnh số |
 
 ---
 
 <div align="center">
   <b>Keypoint Detection Project</b><br>
   <sub>
-    Hand-crafted · Real-time · ML Clustering · Deep Learning<br>
-    Thực hiện bởi nhóm sinh viên · Trường Đại học Kinh tế TP.HCM (UEH)<br>
-    Môn học: Xử lý và Phân tích Hình ảnh · Năm học 2025 – 2026
+    Harris Corner Detection · FAST · ORB<br>
+    Ứng dụng nhận diện nhãn sản phẩm/logo trong bài toán keypoint detection<br>
+    Môn học: Xử lý và Phân tích Hình ảnh
   </sub>
 </div>
