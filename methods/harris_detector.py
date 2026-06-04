@@ -147,4 +147,4 @@ if __name__ == "__main__":
 
     cv2.imwrite("harris_output.jpg", result["image"])
     cv2.imwrite("harris_response.jpg", result["response_map"])
-    print("Đã lưu: harris_output.jpg, harris_response.jpg")
+    print("Saved: harris_output.jpg, harris_response.jpg")

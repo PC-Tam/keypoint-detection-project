@@ -162,9 +162,9 @@ if __name__ == "__main__":
     # So sánh threshold thấp vs cao
     result_low = detect_fast(img_rgb, threshold=5)
     result_high = detect_fast(img_rgb, threshold=30)
-    print(f"\n  threshold=5  → {result_low['keypoints_count']} keypoints")
-    print(f"  threshold=10 → {result['keypoints_count']} keypoints")
-    print(f"  threshold=30 → {result_high['keypoints_count']} keypoints")
+    print(f"\n  threshold=5  -> {result_low['keypoints_count']} keypoints")
+    print(f"  threshold=10 -> {result['keypoints_count']} keypoints")
+    print(f"  threshold=30 -> {result_high['keypoints_count']} keypoints")
 
     cv2.imwrite("fast_output.jpg", result["image"])
-    print("\nĐã lưu: fast_output.jpg")
+    print("\nSaved: fast_output.jpg")
