@@ -1,78 +1,198 @@
+"""
+feature_harris.py
+-----------------
+Harris Corner Detection feature extraction for blood cell classification.
+Provides both visualization utilities and a fixed-length feature vector.
+"""
+
 import cv2
 import numpy as np
 
-def extract_harris_features(image, block_size=2, ksize=3, k=0.04):
-    """
-    Extract a fixed-size feature vector using Harris Corner Detection.
-    Args:
-        image: Preprocessed grayscale image.
-        block_size: Neighborhood size.
-        ksize: Aperture parameter for the Sobel operator.
-        k: Harris detector free parameter.
-    Returns:
-        feature_vector: A 1D numpy array of length 21 (5 global stats + 16 spatial hist).
-    """
-    # Compute Harris response
-    # cv2.cornerHarris requires float32 input
-    dst = cv2.cornerHarris(np.float32(image), block_size, ksize, k)
-    
-    # Threshold for an optimal value, it may vary depending on the image.
-    # We use a threshold relative to the max response
-    threshold = 0.01 * dst.max()
-    corners = np.argwhere(dst > threshold)
-    
-    # 1. Global Statistics (5 features)
-    num_corners = len(corners)
-    
-    if num_corners == 0:
-        return np.zeros(21)
-    
-    # Get the response values of the detected corners
-    corner_responses = dst[dst > threshold]
-    
-    mean_resp = np.mean(corner_responses)
-    max_resp = np.max(corner_responses)
-    std_resp = np.std(corner_responses)
-    
-    # Density: corners per pixel
-    density = num_corners / (image.shape[0] * image.shape[1])
-    
-    global_stats = np.array([num_corners, mean_resp, max_resp, std_resp, density])
-    
-    # 2. Spatial Distribution Histogram (4x4 grid = 16 features)
-    h, w = image.shape
-    grid_h = h // 4
-    grid_w = w // 4
-    
-    spatial_hist = np.zeros(16)
-    for y, x in corners:
-        grid_y = min(y // grid_h, 3)
-        grid_x = min(x // grid_w, 3)
-        idx = grid_y * 4 + grid_x
-        spatial_hist[idx] += 1
-        
-    # Normalize the spatial histogram
-    if num_corners > 0:
-        spatial_hist = spatial_hist / num_corners
-        
-    feature_vector = np.concatenate([global_stats, spatial_hist])
-    return feature_vector
 
-def draw_harris_corners(image, block_size=2, ksize=3, k=0.04):
+# -- Internal helpers ---------------------------------------------------------
+
+def _safe_stats(arr: np.ndarray) -> tuple[float, float, float]:
+    """Return (mean, max, std) for an array; returns (0,0,0) if empty."""
+    if len(arr) == 0:
+        return 0.0, 0.0, 0.0
+    return float(np.mean(arr)), float(np.max(arr)), float(np.std(arr))
+
+
+def detect_harris_corners(
+    gray: np.ndarray,
+    block_size: int = 2,
+    ksize: int = 3,
+    k: float = 0.04,
+    threshold_ratio: float = 0.01,
+) -> list[tuple[int, int, float]]:
     """
-    Detect and draw Harris corners on the image for visualization.
-    Returns a BGR image with drawn corners.
+    Detect Harris corners in a grayscale image.
+
+    Parameters
+    ----------
+    gray : np.ndarray
+        Grayscale uint8 image.
+    block_size : int
+        Neighbourhood size for corner detection.
+    ksize : int
+        Aperture parameter for the Sobel operator.
+    k : float
+        Harris detector free parameter.
+    threshold_ratio : float
+        Fraction of maximum response to use as threshold.
+
+    Returns
+    -------
+    list of (x, y, response)
+        Detected corner coordinates and their response values.
     """
-    if len(image.shape) == 2:
-        img_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-        gray = image
+    gray_f = np.float32(gray)
+    response = cv2.cornerHarris(gray_f, block_size, ksize, k)
+
+    thresh = threshold_ratio * response.max()
+    corners_mask = response > thresh
+    ys, xs = np.where(corners_mask)
+
+    return [(int(x), int(y), float(response[y, x])) for x, y in zip(xs, ys)]
+
+
+def draw_harris_corners(
+    image: np.ndarray,
+    corners: list,
+    color: tuple = (0, 0, 255),
+    radius: int = 3,
+) -> np.ndarray:
+    """
+    Draw Harris corners on an image.
+
+    Parameters
+    ----------
+    image : np.ndarray
+        Grayscale or BGR image.
+    corners : list of (x, y, response)
+        Corners to draw.
+    color : tuple
+        BGR color for circles.
+    radius : int
+        Circle radius.
+
+    Returns
+    -------
+    np.ndarray
+        BGR image with corners drawn.
+    """
+    if image.ndim == 2:
+        vis = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     else:
-        img_bgr = image.copy()
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
-    dst = cv2.cornerHarris(np.float32(gray), block_size, ksize, k)
-    dst = cv2.dilate(dst, None) # Dilate to make corners more visible
-    
-    img_bgr[dst > 0.01 * dst.max()] = [0, 0, 255] # Red dots
-    
-    return img_bgr
+        vis = image.copy()
+
+    for (x, y, _) in corners:
+        cv2.circle(vis, (x, y), radius, color, -1)
+    return vis
+
+
+def extract_harris_features(
+    gray: np.ndarray,
+    mask: np.ndarray = None,
+    contour=None,
+    block_size: int = 2,
+    ksize: int = 3,
+    k: float = 0.04,
+    threshold_ratio: float = 0.01,
+    grid_size: tuple = (4, 4),
+    response_hist_bins: int = 10,
+) -> np.ndarray:
+    """
+    Extract a fixed-length Harris feature vector from a grayscale image.
+
+    Feature layout (total = 5 + grid_rows*grid_cols + response_hist_bins + 3):
+      [0]   number_of_keypoints
+      [1]   mean_response
+      [2]   max_response
+      [3]   std_response
+      [4]   keypoint_density  (keypoints / image_area)
+      [5 .. 5+G*G-1]   spatial histogram (grid_size[0] x grid_size[1] cells)
+      [5+G*G .. 5+G*G+B-1]  response histogram (response_hist_bins bins)
+      [-3]  n_keypoints_in_mask
+      [-2]  ratio_keypoints_in_mask
+      [-1]  n_keypoints_near_contour
+
+    Parameters
+    ----------
+    gray : np.ndarray
+        Grayscale uint8 image.
+    mask : np.ndarray or None
+        Binary mask (0/255) for the cell region.
+    contour : array or None
+        Cell contour for proximity analysis.
+    block_size, ksize, k, threshold_ratio : Harris parameters.
+    grid_size : tuple of (rows, cols) for spatial histogram.
+    response_hist_bins : int
+        Number of bins for response histogram.
+
+    Returns
+    -------
+    np.ndarray
+        1-D feature vector (float32).
+    """
+    h, w = gray.shape[:2]
+    n_grid = grid_size[0] * grid_size[1]
+    feat_size = 5 + n_grid + response_hist_bins + 3
+    zero_feat = np.zeros(feat_size, dtype=np.float32)
+
+    corners = detect_harris_corners(gray, block_size, ksize, k, threshold_ratio)
+
+    if not corners:
+        return zero_feat
+
+    xs = np.array([c[0] for c in corners], dtype=np.float32)
+    ys = np.array([c[1] for c in corners], dtype=np.float32)
+    responses = np.array([c[2] for c in corners], dtype=np.float32)
+
+    mean_r, max_r, std_r = _safe_stats(responses)
+    density = len(corners) / (h * w) if (h * w) > 0 else 0.0
+
+    # -- Spatial grid histogram -----------------------------------------------
+    cell_h = h / grid_size[0]
+    cell_w = w / grid_size[1]
+    spatial_hist = np.zeros(n_grid, dtype=np.float32)
+    for x, y in zip(xs, ys):
+        row = min(int(y / cell_h), grid_size[0] - 1)
+        col = min(int(x / cell_w), grid_size[1] - 1)
+        spatial_hist[row * grid_size[1] + col] += 1
+    # Normalize
+    if spatial_hist.sum() > 0:
+        spatial_hist /= spatial_hist.sum()
+
+    # -- Response histogram ---------------------------------------------------
+    resp_hist, _ = np.histogram(responses, bins=response_hist_bins)
+    resp_hist = resp_hist.astype(np.float32)
+    if resp_hist.sum() > 0:
+        resp_hist /= resp_hist.sum()
+
+    # -- Mask-based features --------------------------------------------------
+    n_in_mask = 0
+    if mask is not None:
+        for x, y in zip(xs.astype(int), ys.astype(int)):
+            xc = np.clip(x, 0, w - 1)
+            yc = np.clip(y, 0, h - 1)
+            if mask[yc, xc] > 0:
+                n_in_mask += 1
+    ratio_in_mask = n_in_mask / len(corners) if corners else 0.0
+
+    # -- Near-contour keypoints ------------------------------------------------
+    n_near_contour = 0
+    if contour is not None and len(contour) > 0:
+        for x, y in zip(xs.astype(int), ys.astype(int)):
+            dist = abs(cv2.pointPolygonTest(contour, (float(x), float(y)), True))
+            if dist < 5.0:
+                n_near_contour += 1
+
+    # -- Assemble feature vector -----------------------------------------------
+    feat = np.concatenate([
+        np.array([len(corners), mean_r, max_r, std_r, density], dtype=np.float32),
+        spatial_hist,
+        resp_hist,
+        np.array([n_in_mask, ratio_in_mask, n_near_contour], dtype=np.float32),
+    ])
+    return feat

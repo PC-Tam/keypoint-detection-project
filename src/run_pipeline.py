@@ -1,142 +1,190 @@
+"""
+run_pipeline.py
+---------------
+Master pipeline script for the Blood Cell Keypoint ML Classification project.
+
+Steps:
+  1. Check / download dataset
+  2. Prepare metadata and splits
+  3. Benchmark Harris / FAST / ORB (on a sample)
+  4. Visualize keypoints
+  5. Extract all features (Harris, FAST, ORB, morphology, color/texture)
+  6. Fit ORB BoVW vocabulary
+  7. Feature selection
+  8. Train ML models
+  9. Evaluate models
+ 10. Print best result and save reports
+"""
+
 import os
 import sys
 import yaml
-import numpy as np
-import pandas as pd
+import time
+import traceback
 from pathlib import Path
-from tqdm import tqdm
+
+# -- Ensure src/ is importable from project root --------------------------------
+SRC_DIR = Path(__file__).parent
+sys.path.insert(0, str(SRC_DIR))
 
 from download_dataset import download_dataset
 from prepare_dataset import prepare_dataset
-from preprocessing import preprocess_fundus_image
-from feature_harris import extract_harris_features
-from feature_fast import extract_fast_features
-from feature_orb import extract_orb_descriptors
-from bovw import train_bovw_model, compute_bovw_histogram
-from train_ml import train_models
-from evaluate import evaluate_model, save_all_results
 
-def load_config():
-    with open("config.yaml", "r") as f:
+
+def load_config(path: str = "config.yaml") -> dict:
+    """Load project configuration from YAML."""
+    cfg_path = Path(path)
+    if not cfg_path.exists():
+        # Try relative to project root
+        cfg_path = SRC_DIR.parent / path
+    with open(cfg_path) as f:
         return yaml.safe_load(f)
 
-def extract_features_for_split(df, config, kmeans_model=None):
-    """
-    Extract all features for a given dataframe of images.
-    Returns dictionaries of feature arrays and the labels.
-    """
-    h_features = []
-    f_features = []
-    o_descriptors_list = []
-    labels = []
-    
-    print("Extracting features...")
-    for idx, row in tqdm(df.iterrows(), total=len(df)):
-        path = row['image_path']
-        label = row['label']
-        
-        try:
-            img = preprocess_fundus_image(
-                path, 
-                size=tuple(config['preprocessing']['image_size']),
-                use_green=config['preprocessing']['use_green_channel'],
-                use_clahe=config['preprocessing']['use_clahe']
-            )
-            
-            # Harris
-            if config['features']['harris']['enabled']:
-                hf = extract_harris_features(img, **{k:v for k,v in config['features']['harris'].items() if k != 'enabled'})
-                h_features.append(hf)
-                
-            # FAST
-            if config['features']['fast']['enabled']:
-                ff = extract_fast_features(img, **{k:v for k,v in config['features']['fast'].items() if k != 'enabled'})
-                f_features.append(ff)
-                
-            # ORB
-            if config['features']['orb']['enabled']:
-                _, od = extract_orb_descriptors(img, nfeatures=config['features']['orb']['nfeatures'])
-                o_descriptors_list.append(od)
-                
-            labels.append(label)
-        except Exception as e:
-            print(f"Error processing {path}: {e}")
-            
-    # BoVW for ORB
-    o_features = []
-    if config['features']['orb']['enabled'] and kmeans_model is not None:
-        for desc in o_descriptors_list:
-            bovw_hist = compute_bovw_histogram(desc, kmeans_model)
-            o_features.append(bovw_hist)
-            
-    return np.array(h_features), np.array(f_features), o_descriptors_list, np.array(o_features), np.array(labels)
+
+def step(num: int, desc: str) -> None:
+    """Print a formatted step header."""
+    print(f"\n{'='*65}")
+    print(f"  STEP {num}: {desc}")
+    print(f"{'='*65}")
+
+
+def ensure_dirs(config: dict) -> None:
+    """Create all required output directories."""
+    for d in [
+        config.get("raw_data_dir", "data/raw"),
+        config.get("processed_data_dir", "data/processed"),
+        config.get("features_dir", "data/features"),
+        "outputs/figures",
+        "outputs/models",
+        "outputs/reports",
+        "outputs/transformed_cases",
+        "outputs/figures/sample_visualizations",
+    ]:
+        Path(d).mkdir(parents=True, exist_ok=True)
 
 
 def run():
+    t_start = time.time()
+    print("\n" + "=" * 65)
+    print("  BLOOD CELL KEYPOINT ML CLASSIFICATION PIPELINE")
+    print("=" * 65)
+
+    # -- Load config ------------------------------------------------------------
     config = load_config()
-    
-    # 1. Download & Check
-    if not download_dataset():
+    ensure_dirs(config)
+
+    test_mode_limit = config.get("test_mode_limit")
+    benchmark_sample = 200
+    viz_per_class = 2
+
+    if test_mode_limit:
+        print(f"\n[pipeline] TEST MODE: limiting to {test_mode_limit} images per split.")
+        benchmark_sample = min(50, test_mode_limit)
+        viz_per_class = 1
+
+    # -- Step 1: Dataset --------------------------------------------------------
+    step(1, "Check / Download Dataset")
+    ok = download_dataset()
+    if not ok:
+        print("\n[pipeline] Dataset not available. Cannot continue.")
+        print("  Please download the dataset manually and re-run:")
+        print("  python src/run_pipeline.py")
         sys.exit(1)
-        
-    # 2. Prepare metadata and split
-    train_path, test_path = prepare_dataset()
-    
-    train_df = pd.read_csv(train_path)
-    test_df = pd.read_csv(test_path)
-    
-    # Clear previous classification reports
-    report_file = Path("outputs/reports/classification_report.txt")
-    if report_file.exists():
-        report_file.unlink()
-        
-    # 3. Process Train Set
-    print("\n--- Processing Train Set ---")
-    X_train_h, X_train_f, train_orb_desc, _, y_train = extract_features_for_split(train_df, config)
-    
-    # Build BoVW model from train ORB descriptors
-    print("Building BoVW KMeans Model...")
-    all_train_desc = np.vstack([d for d in train_orb_desc if len(d) > 0])
-    kmeans_model = train_bovw_model(all_train_desc, n_clusters=config['features']['bovw']['n_clusters'])
-    
-    # Compute Train BoVW features
-    X_train_o = np.array([compute_bovw_histogram(desc, kmeans_model) for desc in train_orb_desc])
-    
-    # 4. Process Test Set
-    print("\n--- Processing Test Set ---")
-    X_test_h, X_test_f, test_orb_desc, X_test_o, y_test = extract_features_for_split(test_df, config, kmeans_model)
-    
-    # 5. Train & Evaluate Models
-    all_results = []
-    
-    feature_sets = [
-        ("Harris", X_train_h, X_test_h),
-        ("FAST", X_train_f, X_test_f),
-        ("ORB_BoVW", X_train_o, X_test_o)
-    ]
-    
-    for feat_name, X_tr, X_te in feature_sets:
-        if X_tr.shape[0] == 0:
-            continue
-            
-        print(f"\n--- Running ML on {feat_name} features ---")
-        models = train_models(X_tr, y_train, feat_name)
-        
-        for model_name, model in models.items():
-            res = evaluate_model(model, X_te, y_test, model_name, feat_name)
-            all_results.append(res)
-            
-    # 6. Save & Summarize Results
-    df_results = save_all_results(all_results)
-    print("\n" + "="*50)
-    print("PIPELINE COMPLETE. RESULTS:")
-    print("="*50)
-    print(df_results.to_string(index=False))
-    
-    # Find best model
-    best_idx = df_results['F1-Score'].idxmax()
-    best_row = df_results.iloc[best_idx]
-    print(f"\nBest Model by F1-Score: {best_row['Model']} using {best_row['Feature']} (F1: {best_row['F1-Score']:.4f})")
+
+    # -- Step 2: Metadata & Splits ----------------------------------------------
+    step(2, "Prepare Metadata and Train/Val/Test Splits")
+    train_path, val_path, test_path = prepare_dataset()
+
+    # -- Step 3: Benchmark -----------------------------------------------------
+    step(3, f"Benchmark Harris / FAST / ORB (sample ~ {benchmark_sample} images)")
+    try:
+        from benchmark_keypoints import run_benchmark
+        run_benchmark(n_sample=benchmark_sample)
+    except Exception as e:
+        print(f"  [WARNING] Benchmark failed: {e}")
+        traceback.print_exc()
+
+    # -- Step 4: Visualize Keypoints --------------------------------------------
+    step(4, "Visualize Keypoints (sample images per class)")
+    try:
+        from visualize_keypoints import run_visualization
+        run_visualization(n_per_class=viz_per_class)
+    except Exception as e:
+        print(f"  [WARNING] Visualization failed: {e}")
+
+    # -- Step 5–8: Feature Engineering (includes BoVW) --------------------------
+    step(5, "Feature Extraction + ORB BoVW Vocabulary + Feature Engineering")
+    try:
+        from feature_engineering import run_feature_engineering
+        run_feature_engineering()
+    except Exception as e:
+        print(f"  [ERROR] Feature engineering failed: {e}")
+        traceback.print_exc()
+        sys.exit(1)
+
+    # -- Step 6: Save transformation case examples ------------------------------
+    step(6, "Save Transformation Case Examples")
+    try:
+        import pandas as pd
+        from preprocessing import preprocess_cell_image
+        from transformations import save_transformation_cases
+
+        df_meta = pd.read_csv(Path(config.get("processed_data_dir", "data/processed")) / "metadata.csv")
+        img_size = tuple(config.get("image_size", [256, 256]))
+        trans_dir = "outputs/transformed_cases"
+        classes = sorted(df_meta["class_name"].unique())
+        for cls in classes[:4]:  # Save a few classes as examples
+            sub = df_meta[df_meta["class_name"] == cls]
+            sample_row = sub.sample(1, random_state=42).iloc[0]
+            try:
+                _, gray = preprocess_cell_image(
+                    sample_row["image_path"], size=img_size
+                )
+                save_transformation_cases(gray, trans_dir, prefix=cls)
+            except Exception:
+                pass
+        print(f"  Saved examples to: {trans_dir}")
+    except Exception as e:
+        print(f"  [WARNING] Transformation examples failed: {e}")
+
+    # -- Step 7: Train ML Models ------------------------------------------------
+    step(7, "Train Machine Learning Models")
+    try:
+        from train_ml import run_training
+        run_training()
+    except Exception as e:
+        print(f"  [ERROR] Training failed: {e}")
+        traceback.print_exc()
+        sys.exit(1)
+
+    # -- Step 8: Evaluate -------------------------------------------------------
+    step(8, "Evaluate Models on Test Set")
+    try:
+        from evaluate import run_evaluation
+        df_results = run_evaluation()
+        if df_results is not None and len(df_results) > 0:
+            print("\n[pipeline] TOP 10 RESULTS BY MACRO F1:")
+            print(df_results.head(10).to_string(index=False))
+    except Exception as e:
+        print(f"  [ERROR] Evaluation failed: {e}")
+        traceback.print_exc()
+
+    # -- Done -------------------------------------------------------------------
+    elapsed = time.time() - t_start
+    print(f"\n{'='*65}")
+    print(f"  PIPELINE COMPLETE  ({elapsed/60:.1f} minutes)")
+    print(f"{'='*65}")
+    print("\n  Outputs:")
+    print("  |---- outputs/reports/keypoint_benchmark.csv")
+    print("  |---- outputs/reports/results.csv")
+    print("  |---- outputs/reports/best_result.txt")
+    print("  |---- outputs/figures/  (confusion matrices, benchmark plots)")
+    print("  |---- outputs/figures/sample_visualizations/")
+    print("  |---- outputs/models/best_model.joblib")
+    print("  \---- outputs/transformed_cases/")
+    print("\n  To launch the demo app:")
+    print("  streamlit run app.py")
+
 
 if __name__ == "__main__":
     run()

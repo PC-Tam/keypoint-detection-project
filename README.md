@@ -1,69 +1,371 @@
-# Phân loại Bệnh Glaucoma bằng Computer Vision Truyền thống & Machine Learning
+# 🔬 Blood Cell Classification using Keypoint Detection + Machine Learning
 
-Dự án này triển khai một pipeline để phân loại hình ảnh võng mạc (fundus) thành Bình thường (Normal) hoặc Mắc bệnh Glaucoma bằng các kỹ thuật Computer Vision truyền thống (Harris Corner, FAST, ORB) và các mô hình Machine Learning (SVM, Random Forest, KNN, Naive Bayes), mà không cần sử dụng Deep Learning.
+> **Xây dựng hệ thống tự động phân loại tế bào máu từ ảnh hiển vi bằng Harris Corner Detection, FAST và ORB kết hợp Machine Learning truyền thống.**
 
-## Các tính năng
-- **Trích xuất đặc trưng truyền thống:** Sử dụng Harris Corner Detection, FAST và ORB để xác định các điểm đặc trưng (keypoints).
-- **Bag of Visual Words (BoVW):** Chuyển đổi các descriptor cục bộ của ORB thành các đặc trưng hình ảnh tổng thể thông qua phân cụm K-Means.
-- **Các mô hình Machine Learning:** Huấn luyện các mô hình SVM, Random Forest, KNN và Gaussian Naive Bayes dựa trên các đặc trưng đã trích xuất.
-- **Giao diện người dùng (UI) tương tác:** Ứng dụng Streamlit với thiết kế UI/UX hiện đại dùng để chẩn đoán và trực quan hóa dữ liệu từ đầu đến cuối.
+---
 
-## Cài đặt & Thiết lập
+## 🎯 Mục tiêu
 
-1. Đảm bảo bạn đã cài đặt Python.
-2. Cài đặt các thư viện cần thiết:
-   ```bash
-   pip install -r requirements.txt
-   ```
+Phát triển pipeline phân loại tế bào máu (multi-class) từ ảnh hiển vi không sử dụng deep learning, thay vào đó dùng:
 
-## Tập dữ liệu (Dataset)
+1. **Phát hiện điểm đặc trưng** (keypoint detection): Harris, FAST, ORB
+2. **Trích xuất đặc trưng hình thái + màu sắc + texture truyền thống**
+3. **Bag of Visual Words (BoVW)** với ORB descriptors
+4. **Machine Learning**: SVM, Random Forest, KNN, Gaussian NB, Logistic Regression, XGBoost (optional)
 
-Dự án này được xây dựng để hoạt động với tập dữ liệu **ACRIMA**, hoặc tùy chọn là **RIM-ONE DL**.
+---
 
-### Tải tự động
-Nếu bạn đã thiết lập token Kaggle API (`~/.kaggle/kaggle.json`), pipeline sẽ tự động tải tập dữ liệu ACRIMA khi bạn chạy lệnh `run_pipeline.py`.
+## ⚠️ Ràng buộc quan trọng
 
-### Tải thủ công
-Nếu tải tự động thất bại, vui lòng làm theo các bước sau:
-1. Tải tập dữ liệu ACRIMA từ [Kaggle](https://www.kaggle.com/datasets/mloey1/acrima).
-2. Giải nén tập dữ liệu.
-3. Đặt tất cả các tệp hình ảnh võng mạc `.jpg` / `.png` trực tiếp vào thư mục `data/raw/ACRIMA/images/`.
+| Điều **ĐƯỢC** dùng | Điều **KHÔNG ĐƯỢC** dùng |
+|---|---|
+| OpenCV, NumPy, scikit-learn | TensorFlow, PyTorch, Keras |
+| Harris / FAST / ORB | CNN, YOLO, ResNet, ViT |
+| SVM, RF, KNN, GNB, LR, XGBoost | Bất kỳ mô hình deep learning nào |
+| Morphological features, LBP, Color Histogram | Transfer learning |
 
-*Lưu ý về nhãn (labels):* Theo mặc định, tập dữ liệu ACRIMA đặt tên các hình ảnh bị Glaucoma có chứa chuỗi `_g_` trong tên tệp, còn hình ảnh bình thường thì không có `_g_`. Pipeline sử dụng quy ước đặt tên này để tự động gán nhãn cho ảnh.
+---
 
-## Chạy Pipeline
+## 📦 Dataset
 
-Để chạy toàn bộ quá trình (bao gồm kiểm tra tập dữ liệu, tiền xử lý, trích xuất đặc trưng, huấn luyện mô hình ML, đánh giá và lưu kết quả):
+**Blood Cells Image Dataset** — Kaggle  
+🔗 https://www.kaggle.com/datasets/unclesamulus/blood-cells-image-dataset
+
+### Các lớp tế bào:
+
+| Class | Description |
+|---|---|
+| `basophil` | Bạch cầu ưa kiềm |
+| `eosinophil` | Bạch cầu ưa acid |
+| `erythroblast` | Nguyên hồng cầu |
+| `immature_granulocyte` | Bạch cầu hạt chưa trưởng thành |
+| `lymphocyte` | Tế bào lympho |
+| `monocyte` | Bạch cầu đơn nhân |
+| `neutrophil` | Bạch cầu trung tính |
+| `platelet` | Tiểu cầu |
+
+---
+
+## 🏗️ Cấu trúc Project
+
+```
+blood_cell_keypoint_ml/
+├── README.md
+├── requirements.txt
+├── config.yaml
+├── data/
+│   ├── raw/            ← Dataset gốc từ Kaggle
+│   ├── processed/      ← metadata.csv, train/val/test.csv
+│   └── features/       ← Feature bundles (.npy)
+├── outputs/
+│   ├── figures/        ← Confusion matrices, benchmark plots, visualizations
+│   ├── models/         ← Trained models (.joblib)
+│   ├── reports/        ← Classification reports, benchmark CSV
+│   └── transformed_cases/  ← Transformation examples
+├── src/
+│   ├── download_dataset.py
+│   ├── prepare_dataset.py
+│   ├── preprocessing.py
+│   ├── transformations.py
+│   ├── segmentation_classical.py
+│   ├── feature_harris.py
+│   ├── feature_fast.py
+│   ├── feature_orb.py
+│   ├── feature_morphology.py
+│   ├── feature_color_texture.py
+│   ├── feature_engineering.py
+│   ├── bovw.py
+│   ├── feature_selection.py
+│   ├── train_ml.py
+│   ├── evaluate.py
+│   ├── benchmark_keypoints.py
+│   ├── visualize_keypoints.py
+│   └── run_pipeline.py
+└── app.py              ← Streamlit demo
+```
+
+---
+
+## 🚀 Hướng dẫn cài đặt & chạy
+
+### 1. Cài thư viện
+
+```bash
+pip install -r requirements.txt
+```
+
+> **XGBoost (optional):**
+> ```bash
+> pip install xgboost
+> ```
+> Pipeline tự động bỏ qua XGBoost nếu chưa được cài.
+
+---
+
+### 2. Tải Dataset
+
+#### Cách 1: Kaggle API (tự động)
+
+```bash
+# Cấu hình kaggle.json trước (~/.kaggle/kaggle.json)
+kaggle datasets download -d unclesamulus/blood-cells-image-dataset -p data/raw --unzip
+```
+
+#### Cách 2: Tải thủ công
+
+1. Vào: https://www.kaggle.com/datasets/unclesamulus/blood-cells-image-dataset
+2. Nhấn **Download**
+3. Giải nén vào `data/raw/` (sao cho `data/raw/basophil/`, `data/raw/eosinophil/`, ... tồn tại)
+4. Chạy lại pipeline
+
+---
+
+### 3. Chạy toàn bộ pipeline
 
 ```bash
 python src/run_pipeline.py
 ```
 
-Pipeline sẽ thực hiện các bước sau:
-- Kiểm tra tập dữ liệu và trích xuất thông tin.
-- Tiền xử lý hình ảnh (Trích xuất kênh màu Xanh lá, áp dụng bộ lọc cân bằng biểu đồ CLAHE).
-- Trích xuất các đặc trưng Harris, FAST và ORB (kết hợp với BoVW).
-- Huấn luyện các mô hình SVM, RF, KNN và GNB trên tất cả các loại đặc trưng.
-- Đánh giá các mô hình và lưu lại các chỉ số, báo cáo, và ma trận nhầm lẫn (confusion matrices) vào thư mục `outputs/`.
+Pipeline sẽ tự động:
+1. Kiểm tra/tải dataset
+2. Tạo metadata và chia train/val/test
+3. Benchmark Harris/FAST/ORB (200 ảnh mẫu)
+4. Visualize keypoints
+5. Trích xuất tất cả features
+6. Fit ORB BoVW vocabulary
+7. Train tất cả ML models
+8. Evaluate và lưu kết quả
 
-## Phân tích Kết quả
+---
 
-Sau khi pipeline chạy xong, hãy kiểm tra thư mục `outputs/`:
-- **`outputs/reports/results.csv`**: Chứa các chỉ số Accuracy, Precision, Recall, F1-Score, và Specificity cho từng sự kết hợp giữa đặc trưng và mô hình.
-- **`outputs/reports/classification_report.txt`**: Chi tiết báo cáo phân loại.
-- **`outputs/figures/`**: Chứa các biểu đồ ma trận nhầm lẫn và các hình ảnh minh họa keypoint.
-
-*Đánh giá hiệu suất:* Đối với các phương pháp Computer Vision truyền thống (không dùng Deep Learning), độ chính xác (Accuracy) hoặc F1-Score trên 70% được coi là mức chấp nhận được, và trên 80% là mức tốt. Deep Learning thường mang lại hiệu suất cao hơn, nhưng các mô hình truyền thống này sẽ giúp ta hiểu rõ hơn về các đặc trưng hình ảnh cụ thể của bệnh Glaucoma.
-
-## Giải thích về Đặc trưng
-- **Harris Corners:** Thuật toán phát hiện các góc trong hình ảnh. Chúng tôi tổng hợp số lượng các góc, số liệu thống kê phản hồi (trung bình, lớn nhất, độ lệch chuẩn) và sự phân bố không gian của chúng.
-- **FAST Keypoints:** Thuật toán phát hiện góc tương tự Harris nhưng với tốc độ nhanh hơn. Chúng tôi xây dựng một vector có kích thước cố định để tóm tắt các điểm đặc trưng này.
-- **ORB + BoVW:** ORB trích xuất các điểm đặc trưng và descriptor bất biến với phép quay và tỷ lệ phóng to/thu nhỏ. Phương pháp BoVW (Bag of Visual Words) sẽ phân nhóm các descriptor này thành "các từ vựng trực quan" để tạo ra một biểu đồ histogram đại diện cho toàn bộ hình ảnh, mang lại những mô tả về kết cấu (texture) phong phú và đa dạng hơn so với các phương pháp thống kê góc đơn thuần.
-
-## Chạy giao diện Demo (UI)
-
-Bạn có thể chạy ứng dụng web tương tác để tải ảnh lên và xem trực tiếp các đặc trưng cũng như kết quả chẩn đoán theo thời gian thực (với giao diện đã được nâng cấp thiết kế chuyên nghiệp):
+### 4. Chạy demo Streamlit
 
 ```bash
-python -m streamlit run app.py
+streamlit run app.py
 ```
+
+---
+
+## 🧠 Giải thích thuật toán
+
+### Harris Corner Detection
+
+Harris phát hiện góc (corner) dựa trên ma trận gradient bậc hai (second-moment matrix):
+
+```
+M = Σ w(x,y) * [Ix²   IxIy]
+                [IxIy  Iy²]
+
+R = det(M) - k·trace²(M)
+```
+
+- R > 0: corner (góc)  
+- R < 0: edge (cạnh)  
+- R ≈ 0: flat region
+
+**Tham số:**
+- `block_size`: kích thước lân cận
+- `ksize`: aperture Sobel operator
+- `k`: Harris detector parameter (thường 0.04–0.06)
+
+---
+
+### FAST — Features from Accelerated Segment Test
+
+FAST so sánh pixel trung tâm với 16 pixel trên đường tròn:
+
+- Nếu ≥ N pixel liên tiếp sáng hơn (hoặc tối hơn) ngưỡng `t` → là keypoint
+- Rất nhanh (≈ real-time), nhưng không có descriptor tích hợp
+- Non-maximum suppression để giảm keypoint thừa
+
+---
+
+### ORB — Oriented FAST and Rotated BRIEF
+
+ORB kết hợp:
+- **Orientation FAST** để detect keypoints (với orientation tính từ intensity centroid)
+- **Rotated BRIEF** để tạo binary descriptor 256-bit
+
+ORB là rotation-invariant và scale-invariant (theo octave pyramid).  
+Matching dùng **Hamming distance** — rất nhanh.
+
+---
+
+## 🔧 Feature Engineering
+
+### 1. Keypoint Statistics (Harris / FAST / ORB)
+
+Với mỗi thuật toán, tạo vector đặc trưng gồm:
+
+| Feature | Mô tả |
+|---|---|
+| `n_keypoints` | Số điểm phát hiện được |
+| `mean/max/std response` | Thống kê điểm mạnh |
+| `keypoint_density` | Mật độ keypoint |
+| `spatial histogram` | Phân bố theo lưới 4×4 |
+| `response histogram` | Phân bố response (10 bins) |
+| `n_in_mask / ratio_in_mask` | Keypoints trong vùng tế bào |
+| `n_near_contour` | Keypoints gần biên tế bào |
+
+Thêm với ORB: `mean/std angle`, `mean/std size`.
+
+### 2. ORB Bag of Visual Words (BoVW)
+
+```
+ORB descriptors (N × 32) 
+→ MiniBatchKMeans (100 clusters)  ← chỉ fit trên train
+→ Histogram 100 chiều (L1 normalized)
+```
+
+> **Không bao giờ fit vocabulary trên val/test** để tránh data leakage.
+
+### 3. Morphological Features (23 chiều)
+
+Trích xuất từ mask phân đoạn tế bào:
+- Area, perimeter, circularity, eccentricity
+- Aspect ratio, extent, solidity
+- Equivalent diameter
+- **Hu moments** (7 values, log-transform)
+- Centroid, mean/std distance contour → centroid
+
+### 4. Color + Texture Features (88 chiều)
+
+| Feature | Chiều |
+|---|---|
+| RGB mean/std | 6 |
+| HSV mean/std | 6 |
+| BGR color histogram | 48 |
+| Gray histogram | 16 |
+| LBP histogram (NumPy) | 10 |
+| Edge density (Canny) | 1 |
+| Mean intensity in mask | 1 |
+
+### 5. Named Feature Bundles
+
+| Bundle | Nội dung |
+|---|---|
+| `harris_only` | Harris stats |
+| `fast_only` | FAST stats |
+| `orb_stats_only` | ORB stats |
+| `orb_bovw` | ORB BoVW 100-dim |
+| `harris_morphology` | Harris + Morphology |
+| `fast_morphology` | FAST + Morphology |
+| `orb_bovw_morphology` | BoVW + Morphology |
+| `combined_harris_fast_orb` | Harris + FAST + ORB stats |
+| `combined_all_traditional` | Tất cả features |
+
+---
+
+## 📊 Chỉ số Benchmark Keypoint
+
+### A. Number of Keypoints
+Số điểm đặc trưng phát hiện được — phản ánh độ nhạy của detector.
+
+### B. Runtime (ms)
+Thời gian xử lý mỗi ảnh — quan trọng cho ứng dụng thực tế.
+
+### C. Repeatability
+Tỷ lệ keypoint từ ảnh gốc tìm lại được trong ảnh biến đổi:
+```
+Repeatability = matched_keypoints / original_keypoints
+```
+Dùng ngưỡng 5 pixel để tính match.
+
+### D. Matching Rate
+- **Harris/FAST**: Geometric matching rate (so khớp vị trí, không có descriptor)
+- **ORB**: Descriptor matching rate (BFMatcher Hamming + ratio test 0.75)
+
+### E. Registration Error
+Sai số trung bình (pixels) khi ước lượng biến đổi hình học:
+- Harris/FAST: từ các cặp điểm match theo vị trí
+- ORB: từ `estimateAffinePartial2D` (RANSAC)
+
+### F. Cell-region Keypoint Ratio
+Tỷ lệ keypoint nằm trong vùng mask tế bào — đánh giá detector có tập trung vào tế bào hay bị nhiễu bởi nền.
+
+---
+
+## 📈 Chỉ số Classification
+
+| Metric | Ý nghĩa |
+|---|---|
+| **Accuracy** | Tỷ lệ dự đoán đúng tổng thể |
+| **Macro Precision** | Precision trung bình các lớp (equal weight) |
+| **Macro Recall** | Recall trung bình các lớp |
+| **Macro F1** | ⭐ Chỉ số chính — F1 trung bình (phù hợp cho multi-class, imbalanced) |
+| **Weighted F1** | F1 trung bình theo tỷ lệ sample từng lớp |
+| **Top-2 Accuracy** | Dự đoán đúng nếu lớp thật nằm trong top-2 dự đoán |
+| **ROC-AUC (macro)** | One-vs-Rest ROC AUC trung bình |
+| **Confusion Matrix** | Ma trận nhầm lẫn chi tiết |
+
+---
+
+## 📉 Mức kỳ vọng kết quả
+
+> Pipeline truyền thống (không CNN) trên 8 lớp tế bào:
+
+| Mức | Macro F1 | Đánh giá |
+|---|---|---|
+| Random baseline | ≈ 12.5% | Đoán ngẫu nhiên |
+| Pipeline chạy đúng | — | Có visualization, benchmark, confusion matrix |
+| Có tín hiệu học | > 50% | Model học được gì đó |
+| Tốt cho traditional CV | > 60% | Kết quả ổn |
+| Xuất sắc (traditional) | > 70% | Rất tốt cho non-DL |
+| Deep learning thường đạt | > 85–95% | Ngoài phạm vi đề tài |
+
+---
+
+## 📂 Outputs
+
+```
+outputs/
+├── reports/
+│   ├── keypoint_benchmark.csv      ← Bảng benchmark Harris/FAST/ORB
+│   ├── results.csv                 ← Kết quả tất cả models
+│   ├── best_result.txt             ← Model tốt nhất
+│   └── classification_report__*.txt
+├── figures/
+│   ├── keypoints_count_comparison.png
+│   ├── runtime_comparison.png
+│   ├── repeatability_comparison.png
+│   ├── matching_rate_comparison.png
+│   ├── registration_error_comparison.png
+│   ├── cell_region_keypoint_ratio.png
+│   ├── confusion_matrix__*.png
+│   └── sample_visualizations/     ← Ảnh minh họa từng lớp
+├── models/
+│   ├── orb_bovw_kmeans.joblib
+│   ├── best_model.joblib
+│   └── <feature_set>__<model>.joblib
+└── transformed_cases/              ← 5 case biến đổi ảnh
+```
+
+---
+
+## 🔧 Cấu hình (config.yaml)
+
+Chỉnh trong `config.yaml`:
+
+```yaml
+test_mode_limit: 300    # Giới hạn số ảnh (null = dùng toàn bộ)
+orb_nfeatures: 500      # Số features ORB tối đa
+bovw_clusters: 100      # Số visual words
+feature_selection_k: 120  # Số features được chọn (SelectKBest)
+image_size: [256, 256]  # Kích thước resize
+```
+
+---
+
+## 📝 Ghi chú kỹ thuật
+
+- Tất cả scaler/selector chỉ fit trên tập **train**, không bao giờ fit trên val/test.
+- BoVW vocabulary chỉ được build từ tập **train ORB descriptors**.
+- Pipeline hỗ trợ chế độ test nhanh qua `test_mode_limit`.
+- Features lưu ra `.npy` để không phải extract lại.
+- Dùng `class_weight="balanced"` cho SVM và Logistic Regression để xử lý lệch class.
+
+---
+
+## ⚕️ Tuyên bố từ chối trách nhiệm
+
+> Project này là **demo học thuật**. Không sử dụng cho mục đích chẩn đoán y khoa thực tế.
