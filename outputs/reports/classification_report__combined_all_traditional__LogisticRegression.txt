@@ -1,0 +1,17 @@
+Feature Set: combined_all_traditional
+Model: LogisticRegression
+============================================================
+                      precision    recall  f1-score   support
+
+            basophil       0.95      0.95      0.95       244
+          eosinophil       0.99      0.98      0.98       623
+        erythroblast       0.94      0.94      0.94       310
+immature_granulocyte       0.88      0.81      0.84       579
+          lymphocyte       0.89      0.96      0.92       243
+            monocyte       0.79      0.88      0.83       284
+          neutrophil       0.95      0.95      0.95       666
+            platelet       0.99      0.99      0.99       470
+
+            accuracy                           0.93      3419
+           macro avg       0.92      0.93      0.93      3419
+        weighted avg       0.93      0.93      0.93      3419

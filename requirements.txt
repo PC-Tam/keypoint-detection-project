@@ -7,3 +7,5 @@ joblib
 pyyaml
 tqdm
 streamlit
+kaggle
+# xgboost is optional - install manually if needed: pip install xgboost

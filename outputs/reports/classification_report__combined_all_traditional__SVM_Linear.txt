@@ -1,0 +1,17 @@
+Feature Set: combined_all_traditional
+Model: SVM_Linear
+============================================================
+                      precision    recall  f1-score   support
+
+            basophil       0.97      0.94      0.96       244
+          eosinophil       0.99      0.99      0.99       623
+        erythroblast       0.97      0.94      0.95       310
+immature_granulocyte       0.84      0.85      0.85       579
+          lymphocyte       0.90      0.96      0.93       243
+            monocyte       0.84      0.80      0.82       284
+          neutrophil       0.94      0.95      0.94       666
+            platelet       0.99      0.99      0.99       470
+
+            accuracy                           0.93      3419
+           macro avg       0.93      0.93      0.93      3419
+        weighted avg       0.93      0.93      0.93      3419
