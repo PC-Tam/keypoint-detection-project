@@ -1,69 +1,69 @@
-# Glaucoma Classification via Traditional Computer Vision & Machine Learning
+# Phân loại Bệnh Glaucoma bằng Computer Vision Truyền thống & Machine Learning
 
-This project implements a pipeline to classify fundus images into Normal or Glaucoma using traditional computer vision techniques (Harris Corner, FAST, ORB) and Machine Learning models (SVM, Random Forest, KNN, Naive Bayes), without relying on Deep Learning.
+Dự án này triển khai một pipeline để phân loại hình ảnh võng mạc (fundus) thành Bình thường (Normal) hoặc Mắc bệnh Glaucoma bằng các kỹ thuật Computer Vision truyền thống (Harris Corner, FAST, ORB) và các mô hình Machine Learning (SVM, Random Forest, KNN, Naive Bayes), mà không cần sử dụng Deep Learning.
 
-## Features
-- **Traditional Feature Extraction:** Uses Harris Corner Detection, FAST, and ORB to identify keypoints.
-- **Bag of Visual Words (BoVW):** Converts local ORB descriptors into global image features using K-Means clustering.
-- **Machine Learning Models:** Trains SVM, Random Forest, KNN, and Gaussian Naive Bayes on the extracted features.
-- **Interactive UI:** Streamlit application for end-to-end inference and visualization.
+## Các tính năng
+- **Trích xuất đặc trưng truyền thống:** Sử dụng Harris Corner Detection, FAST và ORB để xác định các điểm đặc trưng (keypoints).
+- **Bag of Visual Words (BoVW):** Chuyển đổi các descriptor cục bộ của ORB thành các đặc trưng hình ảnh tổng thể thông qua phân cụm K-Means.
+- **Các mô hình Machine Learning:** Huấn luyện các mô hình SVM, Random Forest, KNN và Gaussian Naive Bayes dựa trên các đặc trưng đã trích xuất.
+- **Giao diện người dùng (UI) tương tác:** Ứng dụng Streamlit với thiết kế UI/UX hiện đại dùng để chẩn đoán và trực quan hóa dữ liệu từ đầu đến cuối.
 
-## Setup & Installation
+## Cài đặt & Thiết lập
 
-1. Make sure you have Python installed.
-2. Install the required dependencies:
+1. Đảm bảo bạn đã cài đặt Python.
+2. Cài đặt các thư viện cần thiết:
    ```bash
    pip install -r requirements.txt
    ```
 
-## Dataset
+## Tập dữ liệu (Dataset)
 
-This project is built to work with the **ACRIMA** dataset, or optionally **RIM-ONE DL**.
+Dự án này được xây dựng để hoạt động với tập dữ liệu **ACRIMA**, hoặc tùy chọn là **RIM-ONE DL**.
 
-### Automatic Download
-If you have your Kaggle API token set up (`~/.kaggle/kaggle.json`), the pipeline will attempt to automatically download the ACRIMA dataset when you run `run_pipeline.py`.
+### Tải tự động
+Nếu bạn đã thiết lập token Kaggle API (`~/.kaggle/kaggle.json`), pipeline sẽ tự động tải tập dữ liệu ACRIMA khi bạn chạy lệnh `run_pipeline.py`.
 
-### Manual Download
-If the automatic download fails, follow these steps:
-1. Download the ACRIMA dataset from [Kaggle](https://www.kaggle.com/datasets/mloey1/acrima).
-2. Extract the dataset.
-3. Place all the `.jpg` / `.png` fundus images directly into `data/raw/ACRIMA/images/`.
+### Tải thủ công
+Nếu tải tự động thất bại, vui lòng làm theo các bước sau:
+1. Tải tập dữ liệu ACRIMA từ [Kaggle](https://www.kaggle.com/datasets/mloey1/acrima).
+2. Giải nén tập dữ liệu.
+3. Đặt tất cả các tệp hình ảnh võng mạc `.jpg` / `.png` trực tiếp vào thư mục `data/raw/ACRIMA/images/`.
 
-*Note on labels:* By default, the ACRIMA dataset names glaucoma images with `_g_` in the filename and normal images without `_g_`. The pipeline uses this naming convention to assign labels automatically.
+*Lưu ý về nhãn (labels):* Theo mặc định, tập dữ liệu ACRIMA đặt tên các hình ảnh bị Glaucoma có chứa chuỗi `_g_` trong tên tệp, còn hình ảnh bình thường thì không có `_g_`. Pipeline sử dụng quy ước đặt tên này để tự động gán nhãn cho ảnh.
 
-## Running the Pipeline
+## Chạy Pipeline
 
-To run the entire pipeline (dataset check, preprocessing, feature extraction, ML training, evaluation, and saving results):
+Để chạy toàn bộ quá trình (bao gồm kiểm tra tập dữ liệu, tiền xử lý, trích xuất đặc trưng, huấn luyện mô hình ML, đánh giá và lưu kết quả):
 
 ```bash
 python src/run_pipeline.py
 ```
 
-The pipeline will:
-- Check for the dataset and extract metadata.
-- Preprocess images (Green Channel Extraction, CLAHE).
-- Extract Harris, FAST, and ORB features (with BoVW).
-- Train SVM, RF, KNN, and GNB models on all feature types.
-- Evaluate the models and save the metrics, reports, and confusion matrices to the `outputs/` folder.
+Pipeline sẽ thực hiện các bước sau:
+- Kiểm tra tập dữ liệu và trích xuất thông tin.
+- Tiền xử lý hình ảnh (Trích xuất kênh màu Xanh lá, áp dụng bộ lọc cân bằng biểu đồ CLAHE).
+- Trích xuất các đặc trưng Harris, FAST và ORB (kết hợp với BoVW).
+- Huấn luyện các mô hình SVM, RF, KNN và GNB trên tất cả các loại đặc trưng.
+- Đánh giá các mô hình và lưu lại các chỉ số, báo cáo, và ma trận nhầm lẫn (confusion matrices) vào thư mục `outputs/`.
 
-## Interpreting Results
+## Phân tích Kết quả
 
-After the pipeline finishes, check the `outputs/` directory:
-- **`outputs/reports/results.csv`**: Contains Accuracy, Precision, Recall, F1-Score, and Specificity for each feature-model combination.
-- **`outputs/reports/classification_report.txt`**: Detailed classification metrics.
-- **`outputs/figures/`**: Contains confusion matrix plots and sample keypoint visualizations.
+Sau khi pipeline chạy xong, hãy kiểm tra thư mục `outputs/`:
+- **`outputs/reports/results.csv`**: Chứa các chỉ số Accuracy, Precision, Recall, F1-Score, và Specificity cho từng sự kết hợp giữa đặc trưng và mô hình.
+- **`outputs/reports/classification_report.txt`**: Chi tiết báo cáo phân loại.
+- **`outputs/figures/`**: Chứa các biểu đồ ma trận nhầm lẫn và các hình ảnh minh họa keypoint.
 
-*Expected Performance:* For traditional CV methods without deep learning, an Accuracy or F1-Score above 70% is considered acceptable, and above 80% is considered good. Deep learning typically performs better, but these baseline models help understand the distinct visual features of Glaucoma.
+*Đánh giá hiệu suất:* Đối với các phương pháp Computer Vision truyền thống (không dùng Deep Learning), độ chính xác (Accuracy) hoặc F1-Score trên 70% được coi là mức chấp nhận được, và trên 80% là mức tốt. Deep Learning thường mang lại hiệu suất cao hơn, nhưng các mô hình truyền thống này sẽ giúp ta hiểu rõ hơn về các đặc trưng hình ảnh cụ thể của bệnh Glaucoma.
 
-## Explaining the Features
-- **Harris Corners:** Detects corners in the image. We aggregate the number of corners, response statistics (mean, max, std), and their spatial distribution.
-- **FAST Keypoints:** A faster corner detection algorithm. Similar to Harris, we build a fixed-size vector summarizing the keypoints.
-- **ORB + BoVW:** ORB extracts scale and rotation-invariant keypoints and descriptors. BoVW clusters these descriptors into "visual words" to create a histogram representing the image, providing a richer textural description than simple corner statistics.
+## Giải thích về Đặc trưng
+- **Harris Corners:** Thuật toán phát hiện các góc trong hình ảnh. Chúng tôi tổng hợp số lượng các góc, số liệu thống kê phản hồi (trung bình, lớn nhất, độ lệch chuẩn) và sự phân bố không gian của chúng.
+- **FAST Keypoints:** Thuật toán phát hiện góc tương tự Harris nhưng với tốc độ nhanh hơn. Chúng tôi xây dựng một vector có kích thước cố định để tóm tắt các điểm đặc trưng này.
+- **ORB + BoVW:** ORB trích xuất các điểm đặc trưng và descriptor bất biến với phép quay và tỷ lệ phóng to/thu nhỏ. Phương pháp BoVW (Bag of Visual Words) sẽ phân nhóm các descriptor này thành "các từ vựng trực quan" để tạo ra một biểu đồ histogram đại diện cho toàn bộ hình ảnh, mang lại những mô tả về kết cấu (texture) phong phú và đa dạng hơn so với các phương pháp thống kê góc đơn thuần.
 
-## Running the Demo UI
+## Chạy giao diện Demo (UI)
 
-You can run an interactive web application to upload images and see the features and predictions in real-time:
+Bạn có thể chạy ứng dụng web tương tác để tải ảnh lên và xem trực tiếp các đặc trưng cũng như kết quả chẩn đoán theo thời gian thực (với giao diện đã được nâng cấp thiết kế chuyên nghiệp):
 
 ```bash
-streamlit run app.py
+python -m streamlit run app.py
 ```
