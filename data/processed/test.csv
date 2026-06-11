@@ -1,0 +1,142 @@
+image_path,filename,label,label_name
+data\raw\ACRIMA\train\Non Glaucoma\Im129_ACRIMA.jpg,Im129_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im532_g_ACRIMA.jpg,Im532_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im062_ACRIMA.jpg,Im062_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im659_g_ACRIMA.jpg,Im659_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im517_g_ACRIMA.jpg,Im517_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im440_g_ACRIMA.jpg,Im440_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im593_g_ACRIMA.jpg,Im593_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im453_g_ACRIMA.jpg,Im453_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Non Glaucoma\Im239_ACRIMA.jpg,Im239_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im123_ACRIMA.jpg,Im123_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Non Glaucoma\Im159_ACRIMA.jpg,Im159_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im067_ACRIMA.jpg,Im067_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Glaucoma\Im485_g_ACRIMA.jpg,Im485_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im256_ACRIMA.jpg,Im256_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im419_g_ACRIMA.jpg,Im419_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im496_g_ACRIMA.jpg,Im496_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im002_ACRIMA.jpg,Im002_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im154_ACRIMA.jpg,Im154_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im656_g_ACRIMA.jpg,Im656_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im488_g_ACRIMA.jpg,Im488_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im351_g_ACRIMA.jpg,Im351_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im202_ACRIMA.jpg,Im202_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im357_g_ACRIMA.jpg,Im357_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Non Glaucoma\Im287_ACRIMA.jpg,Im287_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im424_g_ACRIMA.jpg,Im424_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im662_g_ACRIMA.jpg,Im662_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im511_g_ACRIMA.jpg,Im511_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im182_ACRIMA.jpg,Im182_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Non Glaucoma\Im280_ACRIMA.jpg,Im280_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im341_g_ACRIMA.jpg,Im341_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Non Glaucoma\Im308_ACRIMA.jpg,Im308_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im529_g_ACRIMA.jpg,Im529_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im060_ACRIMA.jpg,Im060_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Non Glaucoma\Im091_ACRIMA.jpg,Im091_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im456_g_ACRIMA.jpg,Im456_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im254_ACRIMA.jpg,Im254_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im700_g_ACRIMA.jpg,Im700_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im614_g_ACRIMA.jpg,Im614_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Glaucoma\Im554_g_ACRIMA.jpg,Im554_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im473_g_ACRIMA.jpg,Im473_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im370_g_ACRIMA.jpg,Im370_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im365_g_ACRIMA.jpg,Im365_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im130_ACRIMA.jpg,Im130_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im702_g_ACRIMA.JPG,Im702_g_ACRIMA.JPG,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im681_g_ACRIMA.jpg,Im681_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im352_g_ACRIMA.jpg,Im352_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im034_ACRIMA.jpg,Im034_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im513_g_ACRIMA.jpg,Im513_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im047_ACRIMA.jpg,Im047_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Non Glaucoma\Im158_ACRIMA.jpg,Im158_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im315_g_ACRIMA.jpg,Im315_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im353_g_ACRIMA.jpg,Im353_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im063_ACRIMA.jpg,Im063_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Non Glaucoma\Im193_ACRIMA.jpg,Im193_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im563_g_ACRIMA.jpg,Im563_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Non Glaucoma\Im165_ACRIMA.jpg,Im165_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im331_g_ACRIMA.jpg,Im331_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Non Glaucoma\Im277_ACRIMA.jpg,Im277_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im145_ACRIMA.jpg,Im145_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im643_g_ACRIMA.jpg,Im643_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im474_g_ACRIMA.jpg,Im474_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im232_ACRIMA.jpg,Im232_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im531_g_ACRIMA.jpg,Im531_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im071_ACRIMA.jpg,Im071_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im499_g_ACRIMA.jpg,Im499_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im522_g_ACRIMA.jpg,Im522_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im383_g_ACRIMA.jpg,Im383_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im595_g_ACRIMA.jpg,Im595_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im272_ACRIMA.jpg,Im272_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im115_ACRIMA.jpg,Im115_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Glaucoma\Im647_g_ACRIMA.jpg,Im647_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im514_g_ACRIMA.jpg,Im514_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Non Glaucoma\Im306_ACRIMA.jpg,Im306_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im625_g_ACRIMA.jpg,Im625_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im184_ACRIMA.jpg,Im184_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im693_g_ACRIMA.jpg,Im693_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im269_ACRIMA.jpg,Im269_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im027_ACRIMA.jpg,Im027_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Glaucoma\Im575_g_ACRIMA.jpg,Im575_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im234_ACRIMA.jpg,Im234_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im126_ACRIMA.jpg,Im126_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im603_g_ACRIMA.jpg,Im603_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im515_g_ACRIMA.jpg,Im515_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Non Glaucoma\Im198_ACRIMA.jpg,Im198_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im056_ACRIMA.jpg,Im056_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im494_g_ACRIMA.jpg,Im494_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im313_g_ACRIMA.jpg,Im313_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im233_ACRIMA.jpg,Im233_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im578_g_ACRIMA.jpg,Im578_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im295_ACRIMA.jpg,Im295_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Non Glaucoma\Im017_ACRIMA.jpg,Im017_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im033_ACRIMA.jpg,Im033_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im208_ACRIMA.jpg,Im208_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Glaucoma\Im615_g_ACRIMA.jpg,Im615_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im533_g_ACRIMA.jpg,Im533_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im332_g_ACRIMA.jpg,Im332_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im412_g_ACRIMA.jpg,Im412_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Glaucoma\Im478_g_ACRIMA.jpg,Im478_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im415_g_ACRIMA.jpg,Im415_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im104_ACRIMA.jpg,Im104_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im216_ACRIMA.jpg,Im216_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im211_ACRIMA.jpg,Im211_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im304_ACRIMA.jpg,Im304_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Glaucoma\Im434_g_ACRIMA.jpg,Im434_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Non Glaucoma\Im086_ACRIMA.jpg,Im086_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im695_g_ACRIMA.jpg,Im695_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im260_ACRIMA.jpg,Im260_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im527_g_ACRIMA.jpg,Im527_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im701_g_ACRIMA.jpg,Im701_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im230_ACRIMA.jpg,Im230_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im663_g_ACRIMA.jpg,Im663_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im455_g_ACRIMA.jpg,Im455_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im633_g_ACRIMA.jpg,Im633_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im167_ACRIMA.jpg,Im167_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im231_ACRIMA.jpg,Im231_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im112_ACRIMA.jpg,Im112_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im118_ACRIMA.jpg,Im118_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im634_g_ACRIMA.jpg,Im634_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im378_g_ACRIMA.jpg,Im378_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im065_ACRIMA.jpg,Im065_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im442_g_ACRIMA.jpg,Im442_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im558_g_ACRIMA.jpg,Im558_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Glaucoma\Im678_g_ACRIMA.jpg,Im678_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im026_ACRIMA.jpg,Im026_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im567_g_ACRIMA.jpg,Im567_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im491_g_ACRIMA.jpg,Im491_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im061_ACRIMA.jpg,Im061_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im203_ACRIMA.jpg,Im203_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Non Glaucoma\Im066_ACRIMA.jpg,Im066_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im502_g_ACRIMA.jpg,Im502_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im606_g_ACRIMA.jpg,Im606_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Glaucoma\Im675_g_ACRIMA.jpg,Im675_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im084_ACRIMA.jpg,Im084_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\test\Glaucoma\Im679_g_ACRIMA.jpg,Im679_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im334_g_ACRIMA.jpg,Im334_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\test\Non Glaucoma\Im015_ACRIMA.jpg,Im015_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im373_g_ACRIMA.jpg,Im373_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im327_g_ACRIMA.jpg,Im327_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Glaucoma\Im492_g_ACRIMA.jpg,Im492_g_ACRIMA.jpg,1,Glaucoma
+data\raw\ACRIMA\train\Non Glaucoma\Im111_ACRIMA.jpg,Im111_ACRIMA.jpg,0,Normal
+data\raw\ACRIMA\train\Glaucoma\Im368_g_ACRIMA.jpg,Im368_g_ACRIMA.jpg,1,Glaucoma

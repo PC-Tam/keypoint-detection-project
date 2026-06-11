@@ -1,454 +1,238 @@
 import streamlit as st
-import pandas as pd
-from PIL import Image
-import os
 import cv2
 import numpy as np
-from methods.harris_detector import detect_harris
-from methods.fast_detector import detect_fast
-from methods.orb_detector import detect_orb
-from methods.preprocessing import auto_preprocess, analyze_image, format_analysis_report, preprocess_image, DEFAULT_PREPROCESS_OPTIONS
-from src.matcher import match_orb
+from PIL import Image
+from pathlib import Path
+import yaml
+import sys
+import os
+import pandas as pd
 
-# CẤU HÌNH TRANG CHÍNH & KHỞI TẠO TABS
-st.set_page_config(
-    page_title="Keypoint & Matching Studio",
-    page_icon="🔍",
-    layout="wide"
-)
+# Add src to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-st.title("🔍 Keypoint & Product Matching Studio")
-st.markdown("Giao diện kiểm thử hệ thống nhận diện nhãn sản phẩm/logo sử dụng OpenCV truyền thống.")
-st.write("---")
+from preprocessing import resize_image, extract_green_channel, apply_clahe
+from feature_harris import extract_harris_features, draw_harris_corners
+from feature_fast import extract_fast_features, draw_fast_keypoints
+from feature_orb import extract_orb_descriptors, draw_orb_keypoints
+from bovw import compute_bovw_histogram, load_bovw_model
+import joblib
 
-# Khởi tạo 3 Tabs chính theo yêu cầu bài toán
-tab1, tab2, tab3 = st.tabs([
-    "Keypoint Detection", 
-    "Logo/Product Matching", 
-    "Evaluation"
-])
+# --- Page Config ---
+st.set_page_config(page_title="AI Glaucoma Dashboard", page_icon="👁️", layout="wide")
 
-
-# KHÔNG GIAN TAB 1 - KEYPOINT DETECTION
-with tab1:
-    st.header("🎯 Phát hiện Điểm Đặc Trưng")
-    col1, col2 = st.columns([1, 2])
+# --- Custom Premium CSS ---
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     
-    with col1:
-        st.subheader("Cấu hình Input")
-        uploaded_file_t1 = st.file_uploader(
-            "Chọn ảnh để trích xuất đặc trưng...", 
-            type=["jpg", "jpeg", "png"], 
-            key="t1_single_uploader"
-        )
-        
-        algorithm = st.selectbox(
-            "Chọn thuật toán:",
-            ("Harris Corner Detection", "FAST", "ORB")
-        )
-        
-        # --- Tiền xử lý ảnh ---
-        st.write("---")
-        preprocess_mode = st.radio(
-            "🔧 Tiền xử lý ảnh:",
-            ["Tự động (đề xuất)", "Thủ công", "Tắt"],
-            index=0,
-            key="t1_preprocess_mode",
-            horizontal=True
-        )
-        
-        # Tham số thủ công (chỉ hiển khi chọn Thủ công)
-        use_gaussian = False
-        gaussian_ksize = 5
-        use_clahe = False
-        clahe_clip = 2.0
-        use_bilateral = False
-        bilateral_d = 9
-        bilateral_sigma = 75
-        
-        if preprocess_mode == "Thủ công":
-            use_gaussian = st.checkbox("Gaussian Blur", value=True, key="t1_gaussian")
-            if use_gaussian:
-                gaussian_ksize = st.slider("  Kernel Size", 3, 15, 5, step=2, key="t1_gk")
-            use_bilateral = st.checkbox("Bilateral Filter", value=False, key="t1_bilateral")
-            if use_bilateral:
-                bilateral_d = st.slider("  Diameter", 5, 15, 9, step=2, key="t1_bd")
-                bilateral_sigma = st.slider("  Sigma", 25, 150, 75, step=25, key="t1_bs")
-            use_clahe = st.checkbox("CLAHE", value=False, key="t1_clahe")
-            if use_clahe:
-                clahe_clip = st.slider("  Clip Limit", 1.0, 10.0, 2.0, step=0.5, key="t1_cc")
-        
-        # --- Tham số thuật toán ---
-        st.write("---")
-        st.caption("⚙️ Cấu hình tham số thuật toán:")
-        if algorithm == "Harris Corner Detection":
-            block_size = st.slider("Block Size", 2, 10, 2)
-            ksize = st.slider("Aperture Parameter (ksize)", 3, 31, 3, step=2)
-        elif algorithm == "FAST":
-            threshold = st.slider("Threshold", 1, 100, 20)
-        elif algorithm == "ORB":
-            n_features = st.slider("Max Features (nfeatures)", 100, 5000, 1500, step=100)
-            
-        btn_run_t1 = st.button("Chạy Phát Hiện Keypoints", type="primary", key="btn_t1")
+    /* Hide Streamlit default menus */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Typography and background */
+    body, [class*="css"] {
+        font-family: 'Inter', sans-serif !important;
+    }
+    
+    /* Image Cards styling */
+    .stImage > img {
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        transition: transform 0.2s ease-in-out;
+    }
+    .stImage > img:hover {
+        transform: scale(1.01);
+    }
+    
+    /* Headers */
+    .main-header {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.25rem;
+        letter-spacing: -0.025em;
+    }
+    .sub-header {
+        font-size: 1.1rem;
+        color: #64748b;
+        margin-bottom: 2rem;
+        font-weight: 400;
+    }
+    
+    /* Sidebar Styling (Targeting by attribute) */
+    [data-testid="stSidebar"] {
+        background-color: #f8fafc;
+        border-right: 1px solid #e2e8f0;
+    }
+    
+    /* Tabs Styling */
+    [data-baseweb="tab"] {
+        font-weight: 500;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-    with col2:
-        st.subheader("Kết quả Hiển thị")
-        if uploaded_file_t1 is not None:
-            img_t1 = Image.open(uploaded_file_t1).convert("RGB")
-            img_np = np.array(img_t1)
-            
-            # === Áp dụng tiền xử lý ===
-            # Map tên thuật toán cho preprocessing module
-            algo_map = {
-                "Harris Corner Detection": "Harris",
-                "FAST": "FAST",
-                "ORB": "ORB"
-            }
-            
-            if preprocess_mode == "Tự động (đề xuất)":
-                img_processed, preprocess_report = auto_preprocess(
-                    img_np, algorithm=algo_map[algorithm]
-                )
-            elif preprocess_mode == "Thủ công":
-                img_processed = img_np.copy()
-                manual_steps = []
-                if use_gaussian:
-                    img_processed = cv2.GaussianBlur(img_processed, (gaussian_ksize, gaussian_ksize), 0)
-                    manual_steps.append(f"Gaussian (k={gaussian_ksize})")
-                if use_bilateral:
-                    img_processed = cv2.bilateralFilter(img_processed, bilateral_d, bilateral_sigma, bilateral_sigma)
-                    manual_steps.append(f"Bilateral (d={bilateral_d})")
-                if use_clahe:
-                    lab = cv2.cvtColor(img_processed, cv2.COLOR_RGB2LAB)
-                    clahe = cv2.createCLAHE(clipLimit=clahe_clip, tileGridSize=(8, 8))
-                    lab[:, :, 0] = clahe.apply(lab[:, :, 0])
-                    img_processed = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
-                    manual_steps.append(f"CLAHE (clip={clahe_clip})")
-                preprocess_report = {
-                    "summary": " → ".join(manual_steps) if manual_steps else "Không áp dụng",
-                    "analysis": analyze_image(img_np),
-                    "steps_applied": manual_steps,
-                }
-            else:  # Tắt
-                img_processed = img_np
-                preprocess_report = {
-                    "summary": "Tắt tiền xử lý",
-                    "analysis": analyze_image(img_np),
-                    "steps_applied": [],
-                }
-            
-            # === Kiểm tra có thay đổi hay không ===
-            has_preprocessing = not np.array_equal(img_np, img_processed)
-            
-            # === Hiển thị ===
-            if has_preprocessing:
-                out_col1, out_col2, out_col3 = st.columns(3)
-            else:
-                out_col1, out_col3 = st.columns(2)
-            
-            with out_col1:
-                st.image(img_t1, caption="Ảnh Gốc", use_container_width=True)
-            
-            if has_preprocessing:
-                with out_col2:
-                    st.image(img_processed, caption="Sau Tiền Xử Lý", use_container_width=True)
-            
-            # Hiển thị báo cáo phân tích
-            if preprocess_mode == "Tự động (đề xuất)":
-                with st.expander("📊 Xem phân tích ảnh & bước tiền xử lý", expanded=False):
-                    st.markdown(format_analysis_report(preprocess_report))
-            
-            with out_col3:
-                if btn_run_t1:
-                    st.info(f"Đang xử lý trích xuất bằng {algorithm}...")
-                    
-                    if algorithm == "Harris Corner Detection":
-                        result = detect_harris(img_processed, block_size=block_size, ksize=ksize)
-                    elif algorithm == "FAST":
-                        result = detect_fast(img_processed, threshold=threshold)
-                    elif algorithm == "ORB":
-                        result = detect_orb(img_processed, nfeatures=n_features)
-                    
-                    result_rgb = cv2.cvtColor(result["image"], cv2.COLOR_BGR2RGB)
-                    st.image(result_rgb, caption=f"Kết quả {algorithm}", use_container_width=True)
-                    st.success(f"✅ Phát hiện **{result['keypoints_count']}** keypoints trong **{result['runtime_ms']:.2f} ms**")
-                else:
-                    st.warning("Nhấn nút 'Chạy Phát Hiện Keypoints' để xem kết quả.")
+# --- Data Loading ---
+@st.cache_data
+def load_config():
+    with open("config.yaml", "r") as f:
+        return yaml.safe_load(f)
+
+@st.cache_data
+def load_results():
+    path = Path("outputs/reports/results.csv")
+    if path.exists():
+        return pd.read_csv(path)
+    return None
+
+def load_ml_model(feature_name, model_type):
+    model_path = Path(f"outputs/models/{model_type}_{feature_name}.joblib")
+    if model_path.exists():
+        return joblib.load(model_path)
+    return None
+
+config = load_config()
+df_results = load_results()
+
+# --- SIDEBAR (Settings) ---
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/3004/3004383.png", width=80) # Eye icon
+    st.markdown("### ⚙️ System Config")
+    
+    with st.container(border=True):
+        feature_method = st.selectbox(
+            "1. Feature Extraction Method:",
+            ("Harris Corners", "FAST Keypoints", "ORB Keypoints")
+        )
+        
+        model_type = st.selectbox(
+            "2. Machine Learning Model:",
+            ("RandomForest", "SVM", "KNN", "GNB")
+        )
+    
+    # Show training accuracy if available
+    feat_name_key = "Harris" if feature_method == "Harris Corners" else "FAST" if feature_method == "FAST Keypoints" else "ORB_BoVW"
+    
+    if df_results is not None:
+        model_perf = df_results[(df_results['Model'] == model_type) & (df_results['Feature'] == feat_name_key)]
+        if not model_perf.empty:
+            f1_score = model_perf.iloc[0]['F1-Score'] * 100
+            with st.container(border=True):
+                st.metric(label="🎯 Training F1-Score", value=f"{f1_score:.2f}%")
         else:
-            st.info("Vui lòng upload ảnh ở cột bên trái.")
-
-
-# KHÔNG GIAN TAB 2 - LOGO/PRODUCT MATCHING
-with tab2:
-    st.header("🧩 Khớp Nhãn Sản Phẩm & Logo")
-    t2_col_left, t2_col_right = st.columns([1, 2])
-    
-    with t2_col_left:
-        st.subheader("Dữ liệu Đầu Vào")
-        template_file = st.file_uploader(
-            "1. Upload ảnh Template (Ảnh gốc mẫu nhãn/logo)", 
-            type=["jpg", "jpeg", "png"], 
-            key="t2_template"
-        )
-        
-        test_file = st.file_uploader(
-            "2. Upload ảnh Test (Ảnh hiện trường thực tế)", 
-            type=["jpg", "jpeg", "png"], 
-            key="t2_test"
-        )
-        
-        # ── Preprocessing Options ──────────────────────────────────
-        st.write("---")
-        st.caption("🔧 Tiền xử lý ảnh (Preprocessing):")
-        
-        t2_resize_max = st.slider(
-            "Resize max size (px)", 256, 2048, 1024, step=128, key="t2_resize"
-        )
-        t2_use_clahe = st.checkbox("Enable CLAHE", value=True, key="t2_clahe")
-        t2_clahe_clip = 2.0
-        if t2_use_clahe:
-            t2_clahe_clip = st.slider(
-                "  CLAHE clipLimit", 1.0, 8.0, 2.0, step=0.5, key="t2_clahe_clip"
-            )
-        t2_use_gaussian = st.checkbox("Enable Gaussian Blur", value=False, key="t2_gaussian")
-        t2_gaussian_k = 5
-        if t2_use_gaussian:
-            t2_gaussian_k = st.slider(
-                "  Gaussian kernel", 3, 15, 5, step=2, key="t2_gk"
-            )
-        t2_use_median = st.checkbox("Enable Median Blur", value=False, key="t2_median")
-        t2_median_k = 5
-        if t2_use_median:
-            t2_median_k = st.slider(
-                "  Median kernel", 3, 9, 5, step=2, key="t2_mk"
-            )
-        t2_use_contrast = st.checkbox("Enable Contrast Stretching", value=False, key="t2_contrast")
-        t2_use_sharpen = st.checkbox("Enable Sharpen", value=False, key="t2_sharpen")
-        t2_sharpen_str = 0.5
-        if t2_use_sharpen:
-            t2_sharpen_str = st.slider(
-                "  Sharpen strength", 0.1, 1.5, 0.5, step=0.1, key="t2_ss"
-            )
-        
-        # ── ORB Parameters ─────────────────────────────────────────
-        st.write("---")
-        st.caption("⚙️ Tham số ORB:")
-        t2_nfeatures = st.slider(
-            "nfeatures", 500, 5000, 1500, step=100, key="t2_nfeat"
-        )
-        t2_scale = st.slider(
-            "scaleFactor", 1.05, 2.0, 1.2, step=0.05, key="t2_scale"
-        )
-        
-        # ── Matching Parameters ────────────────────────────────────
-        st.write("---")
-        st.caption("🎯 Tham số Matching:")
-        t2_ratio = st.slider(
-            "Ratio threshold (Lowe's)", 0.5, 0.95, 0.75, step=0.05, key="t2_ratio"
-        )
-        t2_min_matches = st.number_input(
-            "Min good matches", min_value=4, max_value=100, value=10, key="t2_minmatch"
-        )
-        t2_min_inlier = st.slider(
-            "Min inlier ratio", 0.1, 0.8, 0.25, step=0.05, key="t2_inlier"
-        )
-        
-        btn_run_t2 = st.button("Tiến hành So Khớp Ảnh", type="primary", key="btn_t2")
-
-    with t2_col_right:
-        st.subheader("Kết quả Matching")
-        if template_file and test_file:
-            img_template = Image.open(template_file)
-            img_test = Image.open(test_file)
+            st.warning("⚠️ No training data found for this combination.")
             
-            # Preview ảnh gốc
-            preview_col1, preview_col2 = st.columns(2)
-            with preview_col1:
-                st.image(img_template, caption="Template gốc", width=200)
-            with preview_col2:
-                st.image(img_test, caption="Ảnh test gốc", width=200)
+    st.markdown("---")
+    with st.expander("ℹ️ About Methods", expanded=True):
+        st.markdown("- **Harris/FAST:** Good for corner and vessel edge detection.\n- **ORB:** Scale and rotation invariant.")
+
+# --- MAIN DASHBOARD ---
+st.markdown('<div class="main-header">👁️ Glaucoma Diagnosis Dashboard</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Automated fundus image analysis using Computer Vision & Machine Learning.</div>', unsafe_allow_html=True)
+
+uploaded_file = st.file_uploader("📂 Upload a Fundus Image", type=["jpg", "jpeg", "png"], help="Supported formats: JPG, JPEG, PNG")
+
+if uploaded_file is None:
+    # --- EMPTY STATE ---
+    st.info("👋 **Welcome to the Glaucoma Diagnosis Dashboard!**\n\nPlease follow these steps to analyze an image:\n1. Open the sidebar on the left and select your preferred Feature Extraction method and Machine Learning model.\n2. Click 'Browse files' above to upload a fundus image.\n3. Wait a moment for the AI to process and return the diagnostic result.")
+else:
+    # Process uploaded image
+    with st.spinner('Processing image and extracting features...'):
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        image_bgr = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        
+        img_bgr_resized = resize_image(image_bgr, tuple(config['preprocessing']['image_size']))
+        green_channel = extract_green_channel(img_bgr_resized)
+        clahe_img = apply_clahe(green_channel)
+        
+        # Feature Extraction
+        feature_vector = None
+        num_keypoints = 0
+        
+        if feature_method == "Harris Corners":
+            vis_img = draw_harris_corners(clahe_img)
+            feature_vector = extract_harris_features(clahe_img, **{k:v for k,v in config['features']['harris'].items() if k != 'enabled'})
+            num_keypoints = int(feature_vector[0])
+        elif feature_method == "FAST Keypoints":
+            vis_img = draw_fast_keypoints(clahe_img)
+            feature_vector = extract_fast_features(clahe_img, **{k:v for k,v in config['features']['fast'].items() if k != 'enabled'})
+            num_keypoints = int(feature_vector[0])
+        elif feature_method == "ORB Keypoints":
+            vis_img = draw_orb_keypoints(clahe_img, nfeatures=config['features']['orb']['nfeatures'])
+            kp, des = extract_orb_descriptors(clahe_img, nfeatures=config['features']['orb']['nfeatures'])
+            num_keypoints = len(kp)
+            bovw_path = Path("outputs/models/orb_bovw_kmeans.joblib")
+            if bovw_path.exists():
+                kmeans = load_bovw_model(bovw_path)
+                feature_vector = compute_bovw_histogram(des, kmeans)
                 
-            st.write("---")
-            
-            if btn_run_t2:
-                st.info("Đang chạy ORB Feature Matching + Preprocessing + RANSAC...")
-                
-                # Build preprocessing options từ UI
-                pp_options = {
-                    "resize": True,
-                    "max_size": t2_resize_max,
-                    "grayscale": True,
-                    "clahe": t2_use_clahe,
-                    "clahe_clip_limit": t2_clahe_clip,
-                    "gaussian_blur": t2_use_gaussian,
-                    "gaussian_ksize": t2_gaussian_k,
-                    "median_blur": t2_use_median,
-                    "median_ksize": t2_median_k,
-                    "contrast_stretching": t2_use_contrast,
-                    "sharpen": t2_use_sharpen,
-                    "sharpen_strength": t2_sharpen_str,
-                }
-                
-                result = match_orb(
-                    img_template, img_test,
-                    preprocessing_options=pp_options,
-                    nfeatures=t2_nfeatures,
-                    scaleFactor=t2_scale,
-                    ratio_threshold=t2_ratio,
-                    min_good_matches=t2_min_matches,
-                    min_inlier_ratio=t2_min_inlier,
-                )
-                
-                # ── Hiển thị ảnh trước/sau preprocessing ──────────
-                pp_info = result.get("preprocessing_info", {})
-                tpl_info = pp_info.get("template", {})
-                qry_info = pp_info.get("query", {})
-                
-                if tpl_info.get("steps_applied") or qry_info.get("steps_applied"):
-                    with st.expander("📊 Chi tiết Preprocessing", expanded=False):
-                        pc1, pc2 = st.columns(2)
-                        with pc1:
-                            st.markdown("**Template:**")
-                            tpl_steps = tpl_info.get("steps_applied", [])
-                            st.markdown(" → ".join(tpl_steps) if tpl_steps else "Không có")
-                        with pc2:
-                            st.markdown("**Query:**")
-                            qry_steps = qry_info.get("steps_applied", [])
-                            st.markdown(" → ".join(qry_steps) if qry_steps else "Không có")
-                
-                # ── Kết quả chính ─────────────────────────────────
-                if result["detected"]:
-                    st.success(
-                        f"✅ **DETECTED** — Tìm thấy đối tượng!  \n"
-                        f"Confidence: **{result['confidence_score']:.1%}** | "
-                        f"Good matches: **{result['good_matches']}** | "
-                        f"Inliers: **{result['inlier_count']}** ({result['inlier_ratio']:.1%})"
-                    )
-                else:
-                    st.error(
-                        f"❌ **NOT DETECTED** — Không tìm thấy đối tượng.  \n"
-                        f"Good matches: **{result['good_matches']}** "
-                        f"(cần ≥ {t2_min_matches})"
-                    )
-                
-                # ── Bảng metrics chi tiết ─────────────────────────
-                mc1, mc2, mc3, mc4 = st.columns(4)
-                mc1.metric("KP Template", result["keypoints_template"])
-                mc2.metric("KP Query", result["keypoints_query"])
-                mc3.metric("Good Matches", f"{result['good_matches']}/{result['total_matches']}")
-                mc4.metric("Confidence", f"{result['confidence_score']:.1%}")
-                
-                mc5, mc6, mc7, mc8 = st.columns(4)
-                mc5.metric("Inlier Count", result["inlier_count"])
-                mc6.metric("Inlier Ratio", f"{result['inlier_ratio']:.1%}")
-                mc7.metric("Runtime", f"{result['runtime_ms']:.1f} ms")
-                mc8.metric("Kết luận", "✅ Có" if result["detected"] else "❌ Không")
-                
-                st.write("---")
-                
-                # ── Ảnh matching ──────────────────────────────────
-                result_rgb = cv2.cvtColor(result["image"], cv2.COLOR_BGR2RGB)
-                st.image(
-                    result_rgb,
-                    caption="Kết quả Feature Matching (ORB + Lowe's Ratio Test + RANSAC)",
-                    use_container_width=True,
-                )
-                
-                # ── Ảnh detected region ───────────────────────────
-                if result["detected_region"] is not None:
-                    region_rgb = cv2.cvtColor(result["detected_region"], cv2.COLOR_BGR2RGB)
-                    st.image(
-                        region_rgb,
-                        caption="Vùng logo/nhãn phát hiện (Homography projection)",
-                        use_container_width=True,
-                    )
-            else:
-                st.warning("Nhấn nút 'Tiến hành So Khớp Ảnh' để chạy thuật toán.")
+        vis_img_rgb = cv2.cvtColor(vis_img, cv2.COLOR_BGR2RGB)
+        
+        # PREDICTION RESULT (Highlight)
+        st.markdown("### 🏆 Diagnostic Result")
+        model = load_ml_model(feat_name_key, model_type)
+        
+        if feature_vector is None or (feature_method == "ORB Keypoints" and not bovw_path.exists()):
+            st.error("❌ Failed to extract features or missing BoVW model.")
+        elif model is None:
+            st.error(f"❌ Model {model_type} ({feat_name_key}) not found. Please run the training pipeline first.")
         else:
-            st.info("Vui lòng upload ĐỦ cả ảnh Template và ảnh Test để thực hiện.")
-
-
-# KHÔNG GIAN TAB 3 - EVALUATION (Đọc và phân tích file results.csv)
-with tab3:
-    st.header("📊 Kết quả Đánh giá Hiệu năng (Evaluation)")
-    st.markdown("Đọc trực tiếp dữ liệu từ file thống kê hệ thống `results.csv`.")
-    
-    csv_path = "results.csv"
-    
-    if os.path.exists(csv_path):
-        try:
-            df = pd.read_csv(csv_path)
+            # Predict
+            X_input = feature_vector.reshape(1, -1)
+            pred = model.predict(X_input)[0]
             
-            st.subheader("Chỉ số đo lường tổng quan")
-            m1, m2, m3, m4 = st.columns(4)
-            
-            total_tested = len(df)
-            avg_time = df['Processing_Time'].mean() if 'Processing_Time' in df.columns else 0.0
-            
-            m1.metric("Tổng số mẫu đã test", f"{total_tested} ảnh")
-            m2.metric("Thời gian xử lý trung bình", f"{avg_time:.4f} s")
-            
-            if 'Prediction' in df.columns and 'Ground_Truth' in df.columns:
-                correct = (df['Prediction'] == df['Ground_Truth']).sum()
-                accuracy = (correct / total_tested) * 100
-                m3.metric("Độ chính xác (Accuracy)", f"{accuracy:.1f}%")
-            else:
-                m3.metric("Độ chính xác (Accuracy)", "N/A")
+            confidence = None
+            if hasattr(model, "predict_proba"):
+                proba = model.predict_proba(X_input)[0]
+                confidence = proba[pred] * 100
                 
-            m4.metric("Trạng thái tệp dữ liệu", "Đã đồng bộ", delta="results.csv")
-            
-            st.write("---")
-            st.subheader("Chi tiết kết quả theo cụm sản phẩm")
-            
-            if 'Logo_Group' in df.columns:
-                logo_groups = ["Tất cả"] + list(df['Logo_Group'].unique())
-                selected_group = st.selectbox("Lọc theo thư mục sản phẩm:", logo_groups)
+            with st.container(border=True):
+                col_res1, col_res2 = st.columns([1, 1])
+                with col_res1:
+                    if pred == 0:
+                        st.success("🟢 **CONCLUSION: NORMAL**")
+                    else:
+                        st.error("🔴 **CONCLUSION: GLAUCOMA**")
                 
-                if selected_group != "Tất cả":
-                    df_display = df[df['Logo_Group'] == selected_group]
-                else:
-                    df_display = df
-            else:
-                df_display = df
-                st.caption("Gợi ý: Thêm cột `Logo_Group` vào tệp CSV để phân tách kết quả theo thư mục con.")
-            
-            st.dataframe(df_display, use_container_width=True)
-            
-            st.write("---")
-            st.subheader("Biểu đồ Trực quan hóa")
-            chart_col1, chart_col2 = st.columns(2)
-            with chart_col1:
-                if 'Processing_Time' in df.columns:
-                    st.markdown("**Thời gian xử lý của hệ thống qua từng ảnh (giây):**")
-                    st.line_chart(df_display['Processing_Time'])
-            with chart_col2:
-                if 'Good_Matches' in df.columns:
-                    st.markdown("**Số lượng điểm khớp hình học (Good Matches) tìm được:**")
-                    st.bar_chart(df_display['Good_Matches'])
+                with col_res2:
+                    if confidence:
+                        st.caption(f"AI Confidence Score: **{confidence:.2f}%**")
+                        st.progress(int(confidence) / 100)
+    
+        st.markdown("---")
+        
+        # ANALYSIS INTERFACE (TABS)
+        tab1, tab2, tab3 = st.tabs(["🩻 Preprocessing", "🎯 Keypoint Analysis", "📊 Feature Extraction"])
+        
+        with tab1:
+            with st.container(border=True):
+                st.markdown("#### Contrast Enhancement & Filtering")
+                col_t1, col_t2, col_t3 = st.columns(3)
+                with col_t1:
+                    st.image(cv2.cvtColor(img_bgr_resized, cv2.COLOR_BGR2RGB), caption="1. Original (Resized)", use_container_width=True)
+                with col_t2:
+                    st.image(green_channel, caption="2. Green Channel", use_container_width=True)
+                with col_t3:
+                    st.image(clahe_img, caption="3. CLAHE Enhanced", use_container_width=True)
+    
+        with tab2:
+            with st.container(border=True):
+                col_k1, col_k2 = st.columns([2, 1])
+                with col_k1:
+                    st.image(vis_img_rgb, caption=f"Detection Algorithm: {feature_method}", use_container_width=True)
+                with col_k2:
+                    st.metric(label="Total Keypoints Detected", value=f"{num_keypoints:,}")
+                    st.info("These keypoints represent structural changes in the fundus (e.g., optic disc, vessel edges). The Machine Learning model uses the distribution of these points to make its decision.")
+    
+        with tab3:
+            if feature_vector is not None:
+                with st.container(border=True):
+                    st.markdown(f"#### Feature Vector Chart ({len(feature_vector)} dimensions)")
                     
-        except Exception as e:
-            st.error(f"Lỗi khi đọc hoặc xử lý tệp CSV: {e}")
-            
-    else:
-        st.warning(f"⚠️ Không tìm thấy tệp `{csv_path}` tại thư mục hiện hành.")
-        st.info("💡 Ứng dụng hiển thị Giao diện Mẫu (Mock Data). Biểu đồ sẽ tự động cập nhật dữ liệu thật khi có file csv.")
-        
-        mock_data = {
-            "Logo_Group": ["Logo_01", "Logo_01", "Logo_01", "Logo_02", "Logo_02"],
-            "Image_Name": ["pos_01.jpg", "pos_02.jpg", "neg_01.jpg", "pos_01.jpg", "neg_01.jpg"],
-            "Algorithm": ["ORB", "ORB", "ORB", "ORB", "ORB"],
-            "Good_Matches": [42, 55, 4, 38, 2],
-            "Processing_Time": [0.042, 0.048, 0.035, 0.041, 0.039],
-            "Prediction": ["Positive", "Positive", "Negative", "Positive", "Negative"],
-            "Ground_Truth": ["Positive", "Positive", "Negative", "Positive", "Negative"]
-        }
-        df_mock = pd.DataFrame(mock_data)
-        
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Tổng số mẫu (Mock)", "5 ảnh")
-        m2.metric("Thời gian xử lý TB (Mock)", "0.0410 s")
-        m3.metric("Độ chính xác (Mock)", "100%")
-        
-        st.dataframe(df_mock, use_container_width=True)
-        st.markdown("**Biểu đồ mẫu về số điểm khớp (Good Matches):**")
-        st.bar_chart(df_mock['Good_Matches'])
+                    # Visualize the feature array
+                    chart_data = pd.DataFrame(feature_vector, columns=["Value"])
+                    st.bar_chart(chart_data)
+                    
+                    with st.expander("View Raw Array Data"):
+                        st.dataframe(chart_data.T)

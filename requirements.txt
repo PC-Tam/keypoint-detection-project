@@ -1,10 +1,9 @@
-opencv-contrib-python>=4.9.0
-mediapipe>=0.10.35
-streamlit>=1.33.0
-torch>=2.9.0
-torchvision
+opencv-python
 numpy
-matplotlib
-Pillow
 pandas
-jupyter
+scikit-learn
+matplotlib
+joblib
+pyyaml
+tqdm
+streamlit
