@@ -1,0 +1,17 @@
+Feature Set: orb_stats_only
+Model: KNN
+============================================================
+                      precision    recall  f1-score   support
+
+            basophil       0.57      0.60      0.58       244
+          eosinophil       0.37      0.52      0.43       623
+        erythroblast       0.63      0.43      0.51       310
+immature_granulocyte       0.47      0.45      0.46       579
+          lymphocyte       0.60      0.52      0.56       243
+            monocyte       0.28      0.15      0.20       284
+          neutrophil       0.57      0.58      0.58       666
+            platelet       0.81      0.78      0.80       470
+
+            accuracy                           0.52      3419
+           macro avg       0.54      0.51      0.51      3419
+        weighted avg       0.53      0.52      0.52      3419

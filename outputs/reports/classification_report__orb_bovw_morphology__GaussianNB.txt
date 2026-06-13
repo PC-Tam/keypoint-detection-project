@@ -1,0 +1,17 @@
+Feature Set: orb_bovw_morphology
+Model: GaussianNB
+============================================================
+                      precision    recall  f1-score   support
+
+            basophil       0.31      0.74      0.44       244
+          eosinophil       0.75      0.61      0.67       623
+        erythroblast       0.72      0.60      0.65       310
+immature_granulocyte       0.66      0.61      0.64       579
+          lymphocyte       0.79      0.77      0.78       243
+            monocyte       0.55      0.60      0.58       284
+          neutrophil       0.74      0.57      0.64       666
+            platelet       0.86      0.90      0.88       470
+
+            accuracy                           0.66      3419
+           macro avg       0.67      0.68      0.66      3419
+        weighted avg       0.70      0.66      0.67      3419

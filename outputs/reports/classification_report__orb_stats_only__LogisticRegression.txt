@@ -1,0 +1,17 @@
+Feature Set: orb_stats_only
+Model: LogisticRegression
+============================================================
+                      precision    recall  f1-score   support
+
+            basophil       0.51      0.70      0.59       244
+          eosinophil       0.52      0.35      0.42       623
+        erythroblast       0.69      0.62      0.65       310
+immature_granulocyte       0.54      0.55      0.54       579
+          lymphocyte       0.57      0.77      0.65       243
+            monocyte       0.27      0.33      0.30       284
+          neutrophil       0.68      0.72      0.70       666
+            platelet       0.88      0.80      0.84       470
+
+            accuracy                           0.60      3419
+           macro avg       0.58      0.60      0.59      3419
+        weighted avg       0.60      0.60      0.59      3419

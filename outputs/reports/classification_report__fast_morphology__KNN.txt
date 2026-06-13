@@ -1,0 +1,17 @@
+Feature Set: fast_morphology
+Model: KNN
+============================================================
+                      precision    recall  f1-score   support
+
+            basophil       0.70      0.60      0.65       244
+          eosinophil       0.40      0.64      0.49       623
+        erythroblast       0.62      0.29      0.40       310
+immature_granulocyte       0.51      0.50      0.51       579
+          lymphocyte       0.27      0.23      0.25       243
+            monocyte       0.48      0.36      0.41       284
+          neutrophil       0.52      0.51      0.51       666
+            platelet       0.70      0.62      0.66       470
+
+            accuracy                           0.50      3419
+           macro avg       0.53      0.47      0.48      3419
+        weighted avg       0.52      0.50      0.50      3419

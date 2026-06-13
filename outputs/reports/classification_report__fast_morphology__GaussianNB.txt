@@ -1,0 +1,17 @@
+Feature Set: fast_morphology
+Model: GaussianNB
+============================================================
+                      precision    recall  f1-score   support
+
+            basophil       0.25      0.80      0.38       244
+          eosinophil       0.54      0.30      0.39       623
+        erythroblast       0.51      0.46      0.48       310
+immature_granulocyte       0.48      0.51      0.49       579
+          lymphocyte       0.31      0.40      0.35       243
+            monocyte       0.44      0.21      0.29       284
+          neutrophil       0.58      0.37      0.45       666
+            platelet       0.71      0.76      0.73       470
+
+            accuracy                           0.46      3419
+           macro avg       0.48      0.48      0.45      3419
+        weighted avg       0.51      0.46      0.46      3419

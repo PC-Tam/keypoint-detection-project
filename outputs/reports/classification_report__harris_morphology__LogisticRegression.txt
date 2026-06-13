@@ -1,0 +1,17 @@
+Feature Set: harris_morphology
+Model: LogisticRegression
+============================================================
+                      precision    recall  f1-score   support
+
+            basophil       0.52      0.72      0.61       244
+          eosinophil       0.62      0.47      0.53       623
+        erythroblast       0.57      0.58      0.58       310
+immature_granulocyte       0.59      0.47      0.52       579
+          lymphocyte       0.28      0.47      0.35       243
+            monocyte       0.48      0.65      0.55       284
+          neutrophil       0.66      0.52      0.58       666
+            platelet       0.70      0.76      0.73       470
+
+            accuracy                           0.56      3419
+           macro avg       0.55      0.58      0.56      3419
+        weighted avg       0.58      0.56      0.57      3419
