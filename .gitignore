@@ -17,6 +17,14 @@ venv/
 
 # Data
 data/large_files/
+# Raw dataset
+data/raw/
+# Model outputs
+outputs/
+
+# Python cache
+__pycache__/
+*.pyc
 
 # OS generated files
 .DS_Store
