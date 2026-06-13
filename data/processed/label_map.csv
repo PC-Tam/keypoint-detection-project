@@ -1,0 +1,9 @@
+class_name,label
+basophil,0
+eosinophil,1
+erythroblast,2
+immature_granulocyte,3
+lymphocyte,4
+monocyte,5
+neutrophil,6
+platelet,7
