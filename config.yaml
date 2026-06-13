@@ -1,0 +1,52 @@
+features_dir: "data/features"
+models_dir: "outputs/models"
+results_dir: "outputs/results"
+
+dataset:
+  kaggle_id: "toaharahmanratul/acrima-dataset"
+  raw_dir: "data/raw/ACRIMA"
+  processed_metadata: "data/processed/metadata.csv"
+  train_csv: "data/processed/train.csv"
+  test_csv: "data/processed/test.csv"
+  test_size: 0.2
+  random_state: 42
+dataset:
+  kaggle_id: "toaharahmanratul/acrima-dataset"
+  raw_dir: "data/raw/ACRIMA"
+  processed_metadata: "data/processed/metadata.csv"
+  train_csv: "data/processed/train.csv"
+  test_csv: "data/processed/test.csv"
+  test_size: 0.2
+  random_state: 42
+
+preprocessing:
+  image_size: [400, 400]
+  use_green_channel: true
+  use_clahe: true
+
+features:
+  harris:
+    enabled: true
+    block_size: 2
+    ksize: 3
+    k: 0.04
+  fast:
+    enabled: true
+    threshold: 20
+    nonmax_suppression: true
+  orb:
+    enabled: true
+    nfeatures: 500
+  bovw:
+    n_clusters: 50
+
+models:
+  random_state: 42
+  svm:
+    kernel: "rbf"
+    C: 1.0
+  random_forest:
+    n_estimators: 100
+  knn:
+    n_neighbors: 5
+  gnb: {}
